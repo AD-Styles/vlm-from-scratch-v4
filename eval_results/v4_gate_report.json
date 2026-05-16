@@ -1,0 +1,24 @@
+{
+  "verdict": "GO",
+  "bars": {
+    "vqav2_min": 0.45,
+    "pope_acc_min": 0.65,
+    "pope_f1_min": 0.55,
+    "pope_skew_max": 0.85,
+    "refusal_max": 0.15
+  },
+  "measured": {
+    "vqav2_accuracy": 0.5683333333333334,
+    "pope_accuracy": 0.7175,
+    "pope_yes_f1": 0.7353629976580797,
+    "pope_pred_skew": 0.5675,
+    "pope_refusal_rate": 0.0,
+    "pope_pred_dist": {
+      "yes": 227,
+      "no": 173,
+      "?": 0
+    }
+  },
+  "n_vqav2": 400,
+  "n_pope": 400
+}

@@ -1,0 +1,1252 @@
+{
+  "n_cases": 100,
+  "n_indist": 40,
+  "n_ood": 60,
+  "prompt": "What is in this image?",
+  "auc_single": {
+    "clip_only": 0.6596,
+    "entropy_only": 0.9712
+  },
+  "auc_combined_default_w0.6": 0.8842,
+  "weight_sweep": [
+    {
+      "w_clip": 0.0,
+      "auc": 0.9712
+    },
+    {
+      "w_clip": 0.05,
+      "auc": 0.9704
+    },
+    {
+      "w_clip": 0.1,
+      "auc": 0.9671
+    },
+    {
+      "w_clip": 0.15,
+      "auc": 0.9642
+    },
+    {
+      "w_clip": 0.2,
+      "auc": 0.9625
+    },
+    {
+      "w_clip": 0.25,
+      "auc": 0.9575
+    },
+    {
+      "w_clip": 0.3,
+      "auc": 0.9529
+    },
+    {
+      "w_clip": 0.35,
+      "auc": 0.9487
+    },
+    {
+      "w_clip": 0.4,
+      "auc": 0.9437
+    },
+    {
+      "w_clip": 0.45,
+      "auc": 0.9363
+    },
+    {
+      "w_clip": 0.5,
+      "auc": 0.9233
+    },
+    {
+      "w_clip": 0.55,
+      "auc": 0.9054
+    },
+    {
+      "w_clip": 0.6,
+      "auc": 0.8842
+    },
+    {
+      "w_clip": 0.65,
+      "auc": 0.8604
+    },
+    {
+      "w_clip": 0.7,
+      "auc": 0.8242
+    },
+    {
+      "w_clip": 0.75,
+      "auc": 0.79
+    },
+    {
+      "w_clip": 0.8,
+      "auc": 0.7608
+    },
+    {
+      "w_clip": 0.85,
+      "auc": 0.7308
+    },
+    {
+      "w_clip": 0.9,
+      "auc": 0.705
+    },
+    {
+      "w_clip": 0.95,
+      "auc": 0.6821
+    },
+    {
+      "w_clip": 1.0,
+      "auc": 0.6596
+    }
+  ],
+  "optimal_weight": {
+    "w_clip": 0.0,
+    "auc": 0.9712
+  },
+  "cross_val": {
+    "k": 5,
+    "mean_test_auc": 0.9687,
+    "folds": [
+      {
+        "fold": 0,
+        "tuned_w_clip": 0.0,
+        "test_auc": 0.9896
+      },
+      {
+        "fold": 1,
+        "tuned_w_clip": 0.0,
+        "test_auc": 0.9479
+      },
+      {
+        "fold": 2,
+        "tuned_w_clip": 0.0,
+        "test_auc": 0.9583
+      },
+      {
+        "fold": 3,
+        "tuned_w_clip": 0.0,
+        "test_auc": 0.9583
+      },
+      {
+        "fold": 4,
+        "tuned_w_clip": 0.0,
+        "test_auc": 0.9896
+      }
+    ]
+  },
+  "auc_by_category_at_optimal": {
+    "ood_cartoon": 0.965,
+    "ood_abstract": 0.9775
+  },
+  "final_config": {
+    "weight_clip": 0.0,
+    "weight_entropy": 1.0,
+    "threshold": 0.4582
+  },
+  "threshold_at_optimal_weight": {
+    "threshold": 0.4582,
+    "accuracy": 0.91,
+    "tpr": 0.9,
+    "fpr": 0.075,
+    "precision": 0.9474,
+    "f1": 0.9231,
+    "youden_j": 0.825
+  },
+  "cases": [
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_002.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2246,
+      "clip_match": "an apple",
+      "clip_signal": 0.5028,
+      "llm_entropy": 4.6365,
+      "entropy_signal": 0.5796,
+      "ood_score": 0.5796
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_001.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2215,
+      "clip_match": "a knife",
+      "clip_signal": 0.5232,
+      "llm_entropy": 5.0241,
+      "entropy_signal": 0.628,
+      "ood_score": 0.628
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_021.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2303,
+      "clip_match": "a clock",
+      "clip_signal": 0.4648,
+      "llm_entropy": 4.864,
+      "entropy_signal": 0.608,
+      "ood_score": 0.608
+    },
+    {
+      "image": "data/v4_align/images/000265.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2575,
+      "clip_match": "a tv",
+      "clip_signal": 0.2834,
+      "llm_entropy": 1.4563,
+      "entropy_signal": 0.182,
+      "ood_score": 0.182
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_025.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.227,
+      "clip_match": "a child",
+      "clip_signal": 0.4865,
+      "llm_entropy": 4.122,
+      "entropy_signal": 0.5152,
+      "ood_score": 0.5152
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_010.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.226,
+      "clip_match": "a person",
+      "clip_signal": 0.4934,
+      "llm_entropy": 4.9309,
+      "entropy_signal": 0.6164,
+      "ood_score": 0.6164
+    },
+    {
+      "image": "data/v4_align/images/019836.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2097,
+      "clip_match": "a cow",
+      "clip_signal": 0.6023,
+      "llm_entropy": 2.8213,
+      "entropy_signal": 0.3527,
+      "ood_score": 0.3527
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_000.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2295,
+      "clip_match": "a knife",
+      "clip_signal": 0.4701,
+      "llm_entropy": 5.0831,
+      "entropy_signal": 0.6354,
+      "ood_score": 0.6354
+    },
+    {
+      "image": "data/v4_align/images/013528.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2127,
+      "clip_match": "a woman",
+      "clip_signal": 0.5818,
+      "llm_entropy": 3.5796,
+      "entropy_signal": 0.4475,
+      "ood_score": 0.4475
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_008.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2387,
+      "clip_match": "a bowl",
+      "clip_signal": 0.4087,
+      "llm_entropy": 3.691,
+      "entropy_signal": 0.4614,
+      "ood_score": 0.4614
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_003.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.223,
+      "clip_match": "a woman",
+      "clip_signal": 0.5133,
+      "llm_entropy": 4.4097,
+      "entropy_signal": 0.5512,
+      "ood_score": 0.5512
+    },
+    {
+      "image": "data/v4_align/images/005952.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2782,
+      "clip_match": "a sandwich",
+      "clip_signal": 0.1455,
+      "llm_entropy": 2.5757,
+      "entropy_signal": 0.322,
+      "ood_score": 0.322
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_015.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2366,
+      "clip_match": "a child",
+      "clip_signal": 0.4224,
+      "llm_entropy": 4.4758,
+      "entropy_signal": 0.5595,
+      "ood_score": 0.5595
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_016.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2278,
+      "clip_match": "a person",
+      "clip_signal": 0.4816,
+      "llm_entropy": 4.6705,
+      "entropy_signal": 0.5838,
+      "ood_score": 0.5838
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_002.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2373,
+      "clip_match": "a beach",
+      "clip_signal": 0.4177,
+      "llm_entropy": 3.7064,
+      "entropy_signal": 0.4633,
+      "ood_score": 0.4633
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_005.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2301,
+      "clip_match": "a child",
+      "clip_signal": 0.4657,
+      "llm_entropy": 4.5157,
+      "entropy_signal": 0.5645,
+      "ood_score": 0.5645
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_008.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2218,
+      "clip_match": "a child",
+      "clip_signal": 0.5212,
+      "llm_entropy": 4.55,
+      "entropy_signal": 0.5687,
+      "ood_score": 0.5687
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_022.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2111,
+      "clip_match": "a vase",
+      "clip_signal": 0.5924,
+      "llm_entropy": 4.6989,
+      "entropy_signal": 0.5874,
+      "ood_score": 0.5874
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_006.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2609,
+      "clip_match": "a cat",
+      "clip_signal": 0.2606,
+      "llm_entropy": 2.7814,
+      "entropy_signal": 0.3477,
+      "ood_score": 0.3477
+    },
+    {
+      "image": "data/v4_align/images/005567.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2528,
+      "clip_match": "a bus",
+      "clip_signal": 0.3146,
+      "llm_entropy": 3.4197,
+      "entropy_signal": 0.4275,
+      "ood_score": 0.4275
+    },
+    {
+      "image": "data/v4_align/images/000009.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2995,
+      "clip_match": "a kitchen",
+      "clip_signal": 0.0034,
+      "llm_entropy": 0.1239,
+      "entropy_signal": 0.0155,
+      "ood_score": 0.0155
+    },
+    {
+      "image": "data/v4_align/images/019037.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.1908,
+      "clip_match": "a bowl",
+      "clip_signal": 0.7278,
+      "llm_entropy": 0.7841,
+      "entropy_signal": 0.098,
+      "ood_score": 0.098
+    },
+    {
+      "image": "data/v4_align/images/017876.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2745,
+      "clip_match": "an office",
+      "clip_signal": 0.1698,
+      "llm_entropy": 2.1133,
+      "entropy_signal": 0.2642,
+      "ood_score": 0.2642
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_026.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2224,
+      "clip_match": "a vase",
+      "clip_signal": 0.5174,
+      "llm_entropy": 4.9576,
+      "entropy_signal": 0.6197,
+      "ood_score": 0.6197
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_010.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.248,
+      "clip_match": "a kitchen",
+      "clip_signal": 0.3465,
+      "llm_entropy": 5.0162,
+      "entropy_signal": 0.627,
+      "ood_score": 0.627
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_009.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2323,
+      "clip_match": "a child",
+      "clip_signal": 0.4517,
+      "llm_entropy": 3.3222,
+      "entropy_signal": 0.4153,
+      "ood_score": 0.4153
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_013.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2323,
+      "clip_match": "a book",
+      "clip_signal": 0.4515,
+      "llm_entropy": 4.6677,
+      "entropy_signal": 0.5835,
+      "ood_score": 0.5835
+    },
+    {
+      "image": "data/v4_align/images/005663.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2537,
+      "clip_match": "a truck",
+      "clip_signal": 0.3088,
+      "llm_entropy": 2.2599,
+      "entropy_signal": 0.2825,
+      "ood_score": 0.2825
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_017.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2465,
+      "clip_match": "a bird",
+      "clip_signal": 0.3567,
+      "llm_entropy": 5.4746,
+      "entropy_signal": 0.6843,
+      "ood_score": 0.6843
+    },
+    {
+      "image": "data/v4_align/images/018596.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2518,
+      "clip_match": "a bear",
+      "clip_signal": 0.3213,
+      "llm_entropy": 2.9423,
+      "entropy_signal": 0.3678,
+      "ood_score": 0.3678
+    },
+    {
+      "image": "data/v4_align/images/015030.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2545,
+      "clip_match": "an umbrella",
+      "clip_signal": 0.3036,
+      "llm_entropy": 3.6393,
+      "entropy_signal": 0.4549,
+      "ood_score": 0.4549
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_007.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.229,
+      "clip_match": "a child",
+      "clip_signal": 0.4733,
+      "llm_entropy": 4.8034,
+      "entropy_signal": 0.6004,
+      "ood_score": 0.6004
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_019.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2293,
+      "clip_match": "an apple",
+      "clip_signal": 0.4713,
+      "llm_entropy": 4.8781,
+      "entropy_signal": 0.6098,
+      "ood_score": 0.6098
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_023.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2301,
+      "clip_match": "a person",
+      "clip_signal": 0.4663,
+      "llm_entropy": 4.0743,
+      "entropy_signal": 0.5093,
+      "ood_score": 0.5093
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_004.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2202,
+      "clip_match": "a bird",
+      "clip_signal": 0.5321,
+      "llm_entropy": 5.2456,
+      "entropy_signal": 0.6557,
+      "ood_score": 0.6557
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_004.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2261,
+      "clip_match": "a person",
+      "clip_signal": 0.4928,
+      "llm_entropy": 4.9837,
+      "entropy_signal": 0.623,
+      "ood_score": 0.623
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_028.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2414,
+      "clip_match": "a book",
+      "clip_signal": 0.3908,
+      "llm_entropy": 4.8903,
+      "entropy_signal": 0.6113,
+      "ood_score": 0.6113
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_012.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2355,
+      "clip_match": "a child",
+      "clip_signal": 0.4301,
+      "llm_entropy": 3.0006,
+      "entropy_signal": 0.3751,
+      "ood_score": 0.3751
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_015.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2768,
+      "clip_match": "a horse",
+      "clip_signal": 0.1547,
+      "llm_entropy": 3.3997,
+      "entropy_signal": 0.425,
+      "ood_score": 0.425
+    },
+    {
+      "image": "data/v4_align/images/015822.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2172,
+      "clip_match": "an umbrella",
+      "clip_signal": 0.5519,
+      "llm_entropy": 4.5922,
+      "entropy_signal": 0.574,
+      "ood_score": 0.574
+    },
+    {
+      "image": "data/v4_align/images/012325.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2248,
+      "clip_match": "a child",
+      "clip_signal": 0.5012,
+      "llm_entropy": 3.7598,
+      "entropy_signal": 0.47,
+      "ood_score": 0.47
+    },
+    {
+      "image": "data/v4_align/images/018603.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.3103,
+      "clip_match": "a clock",
+      "clip_signal": 0.0,
+      "llm_entropy": 1.2395,
+      "entropy_signal": 0.1549,
+      "ood_score": 0.1549
+    },
+    {
+      "image": "data/v4_align/images/016273.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2891,
+      "clip_match": "a kitchen",
+      "clip_signal": 0.0725,
+      "llm_entropy": 0.1923,
+      "entropy_signal": 0.024,
+      "ood_score": 0.024
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_000.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2257,
+      "clip_match": "a knife",
+      "clip_signal": 0.4952,
+      "llm_entropy": 4.5423,
+      "entropy_signal": 0.5678,
+      "ood_score": 0.5678
+    },
+    {
+      "image": "data/v4_align/images/013137.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2619,
+      "clip_match": "a sandwich",
+      "clip_signal": 0.2539,
+      "llm_entropy": 2.1989,
+      "entropy_signal": 0.2749,
+      "ood_score": 0.2749
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_026.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2312,
+      "clip_match": "a knife",
+      "clip_signal": 0.4587,
+      "llm_entropy": 4.8945,
+      "entropy_signal": 0.6118,
+      "ood_score": 0.6118
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_021.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2293,
+      "clip_match": "a person",
+      "clip_signal": 0.4711,
+      "llm_entropy": 5.0227,
+      "entropy_signal": 0.6278,
+      "ood_score": 0.6278
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_020.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2337,
+      "clip_match": "an apple",
+      "clip_signal": 0.4418,
+      "llm_entropy": 4.5074,
+      "entropy_signal": 0.5634,
+      "ood_score": 0.5634
+    },
+    {
+      "image": "data/v4_align/images/007377.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2546,
+      "clip_match": "a horse",
+      "clip_signal": 0.3028,
+      "llm_entropy": 1.9178,
+      "entropy_signal": 0.2397,
+      "ood_score": 0.2397
+    },
+    {
+      "image": "data/v4_align/images/001552.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.3123,
+      "clip_match": "a kitchen",
+      "clip_signal": 0.0,
+      "llm_entropy": 0.1333,
+      "entropy_signal": 0.0167,
+      "ood_score": 0.0167
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_029.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2221,
+      "clip_match": "a table",
+      "clip_signal": 0.5193,
+      "llm_entropy": 5.0747,
+      "entropy_signal": 0.6343,
+      "ood_score": 0.6343
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_006.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2239,
+      "clip_match": "a child",
+      "clip_signal": 0.5073,
+      "llm_entropy": 4.1006,
+      "entropy_signal": 0.5126,
+      "ood_score": 0.5126
+    },
+    {
+      "image": "data/v4_align/images/016147.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2468,
+      "clip_match": "a bird",
+      "clip_signal": 0.3547,
+      "llm_entropy": 2.5371,
+      "entropy_signal": 0.3171,
+      "ood_score": 0.3171
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_011.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2282,
+      "clip_match": "a child",
+      "clip_signal": 0.4784,
+      "llm_entropy": 4.6271,
+      "entropy_signal": 0.5784,
+      "ood_score": 0.5784
+    },
+    {
+      "image": "data/v4_align/images/013040.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2289,
+      "clip_match": "an airplane",
+      "clip_signal": 0.4738,
+      "llm_entropy": 2.3274,
+      "entropy_signal": 0.2909,
+      "ood_score": 0.2909
+    },
+    {
+      "image": "data/v4_align/images/007398.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.26,
+      "clip_match": "a horse",
+      "clip_signal": 0.2668,
+      "llm_entropy": 1.4259,
+      "entropy_signal": 0.1782,
+      "ood_score": 0.1782
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_018.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2381,
+      "clip_match": "a child",
+      "clip_signal": 0.4127,
+      "llm_entropy": 3.5388,
+      "entropy_signal": 0.4424,
+      "ood_score": 0.4424
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_028.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2241,
+      "clip_match": "an apple",
+      "clip_signal": 0.5058,
+      "llm_entropy": 4.705,
+      "entropy_signal": 0.5881,
+      "ood_score": 0.5881
+    },
+    {
+      "image": "data/v4_align/images/001791.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2402,
+      "clip_match": "a road",
+      "clip_signal": 0.399,
+      "llm_entropy": 2.8849,
+      "entropy_signal": 0.3606,
+      "ood_score": 0.3606
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_022.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2239,
+      "clip_match": "a person",
+      "clip_signal": 0.5076,
+      "llm_entropy": 4.371,
+      "entropy_signal": 0.5464,
+      "ood_score": 0.5464
+    },
+    {
+      "image": "data/v4_align/images/001728.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2169,
+      "clip_match": "an umbrella",
+      "clip_signal": 0.5541,
+      "llm_entropy": 0.8309,
+      "entropy_signal": 0.1039,
+      "ood_score": 0.1039
+    },
+    {
+      "image": "data/v4_align/images/019420.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2792,
+      "clip_match": "a sheep",
+      "clip_signal": 0.1383,
+      "llm_entropy": 1.4802,
+      "entropy_signal": 0.185,
+      "ood_score": 0.185
+    },
+    {
+      "image": "data/v4_align/images/007748.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2482,
+      "clip_match": "a kitchen",
+      "clip_signal": 0.3454,
+      "llm_entropy": 1.1385,
+      "entropy_signal": 0.1423,
+      "ood_score": 0.1423
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_027.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.241,
+      "clip_match": "a child",
+      "clip_signal": 0.3933,
+      "llm_entropy": 4.1004,
+      "entropy_signal": 0.5125,
+      "ood_score": 0.5125
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_012.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2283,
+      "clip_match": "a vase",
+      "clip_signal": 0.4778,
+      "llm_entropy": 4.7649,
+      "entropy_signal": 0.5956,
+      "ood_score": 0.5956
+    },
+    {
+      "image": "data/v4_align/images/018937.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.211,
+      "clip_match": "an orange",
+      "clip_signal": 0.5934,
+      "llm_entropy": 3.0233,
+      "entropy_signal": 0.3779,
+      "ood_score": 0.3779
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_009.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2414,
+      "clip_match": "a clock",
+      "clip_signal": 0.3906,
+      "llm_entropy": 4.9712,
+      "entropy_signal": 0.6214,
+      "ood_score": 0.6214
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_003.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2249,
+      "clip_match": "a man",
+      "clip_signal": 0.5005,
+      "llm_entropy": 4.416,
+      "entropy_signal": 0.552,
+      "ood_score": 0.552
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_020.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2256,
+      "clip_match": "a mountain",
+      "clip_signal": 0.4963,
+      "llm_entropy": 4.2476,
+      "entropy_signal": 0.531,
+      "ood_score": 0.531
+    },
+    {
+      "image": "data/v4_align/images/017212.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.297,
+      "clip_match": "a giraffe",
+      "clip_signal": 0.0202,
+      "llm_entropy": 2.4513,
+      "entropy_signal": 0.3064,
+      "ood_score": 0.3064
+    },
+    {
+      "image": "data/v4_align/images/000762.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2606,
+      "clip_match": "a table",
+      "clip_signal": 0.2625,
+      "llm_entropy": 2.2033,
+      "entropy_signal": 0.2754,
+      "ood_score": 0.2754
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_025.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2394,
+      "clip_match": "a clock",
+      "clip_signal": 0.4043,
+      "llm_entropy": 4.5213,
+      "entropy_signal": 0.5652,
+      "ood_score": 0.5652
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_017.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2354,
+      "clip_match": "a child",
+      "clip_signal": 0.431,
+      "llm_entropy": 4.1413,
+      "entropy_signal": 0.5177,
+      "ood_score": 0.5177
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_023.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2215,
+      "clip_match": "a clock",
+      "clip_signal": 0.5233,
+      "llm_entropy": 5.2012,
+      "entropy_signal": 0.6502,
+      "ood_score": 0.6502
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_013.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2325,
+      "clip_match": "a child",
+      "clip_signal": 0.4503,
+      "llm_entropy": 3.21,
+      "entropy_signal": 0.4012,
+      "ood_score": 0.4012
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_019.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2607,
+      "clip_match": "a beach",
+      "clip_signal": 0.2619,
+      "llm_entropy": 4.7764,
+      "entropy_signal": 0.597,
+      "ood_score": 0.597
+    },
+    {
+      "image": "data/v4_align/images/018245.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2159,
+      "clip_match": "a mountain",
+      "clip_signal": 0.5603,
+      "llm_entropy": 1.4759,
+      "entropy_signal": 0.1845,
+      "ood_score": 0.1845
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_001.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2469,
+      "clip_match": "a clock",
+      "clip_signal": 0.354,
+      "llm_entropy": 4.7054,
+      "entropy_signal": 0.5882,
+      "ood_score": 0.5882
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_014.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2517,
+      "clip_match": "a table",
+      "clip_signal": 0.3218,
+      "llm_entropy": 4.7208,
+      "entropy_signal": 0.5901,
+      "ood_score": 0.5901
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_007.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2482,
+      "clip_match": "a vase",
+      "clip_signal": 0.3453,
+      "llm_entropy": 5.0559,
+      "entropy_signal": 0.632,
+      "ood_score": 0.632
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_024.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2248,
+      "clip_match": "an apple",
+      "clip_signal": 0.5014,
+      "llm_entropy": 4.2227,
+      "entropy_signal": 0.5278,
+      "ood_score": 0.5278
+    },
+    {
+      "image": "data/v4_align/images/012279.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2794,
+      "clip_match": "a kitchen",
+      "clip_signal": 0.1376,
+      "llm_entropy": 1.9985,
+      "entropy_signal": 0.2498,
+      "ood_score": 0.2498
+    },
+    {
+      "image": "data/v4_align/images/019639.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2249,
+      "clip_match": "a man",
+      "clip_signal": 0.5009,
+      "llm_entropy": 2.0925,
+      "entropy_signal": 0.2616,
+      "ood_score": 0.2616
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_018.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2422,
+      "clip_match": "a bird",
+      "clip_signal": 0.3854,
+      "llm_entropy": 4.8923,
+      "entropy_signal": 0.6115,
+      "ood_score": 0.6115
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_027.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2312,
+      "clip_match": "a living room",
+      "clip_signal": 0.4588,
+      "llm_entropy": 4.7987,
+      "entropy_signal": 0.5998,
+      "ood_score": 0.5998
+    },
+    {
+      "image": "data/v4_align/images/010734.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2413,
+      "clip_match": "a bird",
+      "clip_signal": 0.3912,
+      "llm_entropy": 1.6696,
+      "entropy_signal": 0.2087,
+      "ood_score": 0.2087
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_014.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.2241,
+      "clip_match": "a baby",
+      "clip_signal": 0.5057,
+      "llm_entropy": 4.6123,
+      "entropy_signal": 0.5765,
+      "ood_score": 0.5765
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_005.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2586,
+      "clip_match": "a horse",
+      "clip_signal": 0.2762,
+      "llm_entropy": 4.0833,
+      "entropy_signal": 0.5104,
+      "ood_score": 0.5104
+    },
+    {
+      "image": "data/v4_align/images/008392.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.212,
+      "clip_match": "a giraffe",
+      "clip_signal": 0.5867,
+      "llm_entropy": 0.2853,
+      "entropy_signal": 0.0357,
+      "ood_score": 0.0357
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/cartoon_029.jpg",
+      "category": "ood_cartoon",
+      "ood_label": 1,
+      "clip_max_sim": 0.231,
+      "clip_match": "a child",
+      "clip_signal": 0.46,
+      "llm_entropy": 4.4545,
+      "entropy_signal": 0.5568,
+      "ood_score": 0.5568
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_016.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2424,
+      "clip_match": "a clock",
+      "clip_signal": 0.3837,
+      "llm_entropy": 4.7634,
+      "entropy_signal": 0.5954,
+      "ood_score": 0.5954
+    },
+    {
+      "image": "data/v4_align/images/001459.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2652,
+      "clip_match": "a pizza",
+      "clip_signal": 0.2322,
+      "llm_entropy": 2.399,
+      "entropy_signal": 0.2999,
+      "ood_score": 0.2999
+    },
+    {
+      "image": "data/v4_align/images/004010.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2595,
+      "clip_match": "a motorcycle",
+      "clip_signal": 0.2702,
+      "llm_entropy": 2.612,
+      "entropy_signal": 0.3265,
+      "ood_score": 0.3265
+    },
+    {
+      "image": "data/v4_align/images/006953.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2548,
+      "clip_match": "a bicycle",
+      "clip_signal": 0.3016,
+      "llm_entropy": 4.0802,
+      "entropy_signal": 0.51,
+      "ood_score": 0.51
+    },
+    {
+      "image": "data/v4_align/images/005060.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2195,
+      "clip_match": "a sandwich",
+      "clip_signal": 0.5367,
+      "llm_entropy": 3.385,
+      "entropy_signal": 0.4231,
+      "ood_score": 0.4231
+    },
+    {
+      "image": "data/v4_align/images/010012.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.2505,
+      "clip_match": "a clock",
+      "clip_signal": 0.3297,
+      "llm_entropy": 2.6895,
+      "entropy_signal": 0.3362,
+      "ood_score": 0.3362
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_024.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.263,
+      "clip_match": "a mountain",
+      "clip_signal": 0.2468,
+      "llm_entropy": 5.3106,
+      "entropy_signal": 0.6638,
+      "ood_score": 0.6638
+    },
+    {
+      "image": "data/v4_align/images/013134.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.23,
+      "clip_match": "a bear",
+      "clip_signal": 0.4668,
+      "llm_entropy": 2.7801,
+      "entropy_signal": 0.3475,
+      "ood_score": 0.3475
+    },
+    {
+      "image": "data/v4_align/images/003525.jpg",
+      "category": "indist_coco",
+      "ood_label": 0,
+      "clip_max_sim": 0.237,
+      "clip_match": "a mountain",
+      "clip_signal": 0.4201,
+      "llm_entropy": 1.411,
+      "entropy_signal": 0.1764,
+      "ood_score": 0.1764
+    },
+    {
+      "image": "data/v4_ood_benchmark/images/abstract_011.jpg",
+      "category": "ood_abstract",
+      "ood_label": 1,
+      "clip_max_sim": 0.2313,
+      "clip_match": "a book",
+      "clip_signal": 0.4578,
+      "llm_entropy": 5.1061,
+      "entropy_signal": 0.6383,
+      "ood_score": 0.6383
+    }
+  ]
+}

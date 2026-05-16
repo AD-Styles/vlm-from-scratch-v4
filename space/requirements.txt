@@ -1,0 +1,12 @@
+# Mini-LLaVA v4 — HF Spaces (CPU) 데모 의존성.
+# gradio 는 Space SDK 가 sdk_version 에 맞춰 설치하므로 여기 넣지 않는다.
+# bitsandbytes 도 제외 — CPU 추론은 4-bit 양자화를 쓰지 않는다 (fp32 base).
+torch>=2.6.0
+torchvision>=0.21.0
+transformers>=5.0.0
+accelerate>=0.30.0
+peft>=0.19.1
+huggingface_hub>=1.0.0
+pillow>=10.0.0
+sentencepiece>=0.1.99
+protobuf>=4.25.0

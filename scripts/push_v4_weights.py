@@ -46,7 +46,7 @@ tags:
 
 - **구조**: CLIP-ViT-B/32 (frozen) + 2-layer MLP Projector + Qwen2.5-1.5B-Instruct + LoRA
 - **학습**: QLoRA 4-bit NF4 · Stage 1 정렬 → Stage 2 instruction 46K (영문 + 한국어 균형 믹스) · RTX 4060 8GB
-- **평가**: raw 모델을 VQAv2 + POPE 표준 benchmark 로 측정 — 배포 게이트(scripts/eval_gate.py) 통과 시에만 공개
+- **평가**: 배포 게이트 5/5 통과 — VQAv2 56.8% · POPE 71.8% (n=400, raw 모델 · wrapper 없음)
 
 ## 파일
 

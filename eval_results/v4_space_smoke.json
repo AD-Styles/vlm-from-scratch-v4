@@ -3,70 +3,70 @@
     "image": "data/coco_subset/images/000000.jpg",
     "question": "What is in this image?",
     "intent": "EN 사실",
-    "answer": "Woman.",
-    "elapsed_s": 18.5
+    "answer": "Person.",
+    "elapsed_s": 21.2
   },
   {
     "image": "data/coco_subset/images/000000.jpg",
     "question": "이 사진에 무엇이 보이나요?",
     "intent": "KO 사실",
-    "answer": "이 사진에는 한 여성이 휴대폰을 사용하여 바쁜 방에서 정리함에 있는 물건을 보거나 검토하는 모습을 담고 있습니다. 그녀는 주변 환경의 �",
-    "elapsed_s": 53.4
+    "answer": "이 이미지는 한 여성이 휴대폰으로 칼을 사용하여 피자 조각을 썰고 있습니다. 이는 일반적으로 식료품 가게에서 일하는 직원이나 개인에게 필수적인",
+    "elapsed_s": 65.2
   },
   {
     "image": "data/coco_subset/images/000001.jpg",
     "question": "What is the boy doing?",
     "intent": "EN 행동",
     "answer": "Typing.",
-    "elapsed_s": 9.3
+    "elapsed_s": 17.0
   },
   {
     "image": "data/coco_subset/images/000004.jpg",
     "question": "What animal is the woman holding?",
     "intent": "EN 특정객체",
     "answer": "Dog.",
-    "elapsed_s": 8.7
+    "elapsed_s": 15.6
   },
   {
     "image": "data/coco_subset/images/000004.jpg",
     "question": "이미지를 한국어로 설명해 주세요.",
     "intent": "KO 묘사",
-    "answer": "이미지에서 한 여성이 벽에 매달린 테디베어와 함께 정리대가 놓인 거실과 함께 있는 것을 볼 수 있습니다. 이 장면은 친구 또는 가",
-    "elapsed_s": 45.9
+    "answer": "이미지를 보면 한 남성이 주방에서 포장지나 식기를 들고 있는 것으로 보입니다. 이 남성은 카메라를 사용하여 집안의 요리를 촬영하고 있을 수 있습니다",
+    "elapsed_s": 66.4
   },
   {
     "image": "data/coco_subset/images/000003.jpg",
     "question": "What room is this?",
     "intent": "EN 장면",
     "answer": "Kitchen.",
-    "elapsed_s": 9.8
+    "elapsed_s": 10.4
   },
   {
     "image": "data/coco_subset/images/000005.jpg",
     "question": "Describe this image.",
     "intent": "EN 묘사",
-    "answer": "In this picture we can see the kitchen with a stove and few other things.",
-    "elapsed_s": 20.2
+    "answer": "In this picture we can see the kitchen. In front of it there is a stove, in which there are pots and pans. On the right side we can see the cupboard with some things in it. At the bottom we can see the",
+    "elapsed_s": 60.4
   },
   {
     "image": "data/coco_subset/images/000001.jpg",
     "question": "Is the boy wearing headphones?",
     "intent": "yes/no",
     "answer": "Yes.",
-    "elapsed_s": 8.7
+    "elapsed_s": 9.7
   },
   {
     "image": "data/v4_ood_benchmark/images/cartoon_000.jpg",
     "question": "What is in this image?",
     "intent": "OOD 만화",
-    "answer": "Comic.",
-    "elapsed_s": 8.7
+    "answer": "Girl.",
+    "elapsed_s": 11.8
   },
   {
     "image": "data/v4_ood_benchmark/images/abstract_000.jpg",
     "question": "What do you see in this picture?",
     "intent": "OOD 추상화",
-    "answer": "Cats.",
-    "elapsed_s": 17.0
+    "answer": "Birds.",
+    "elapsed_s": 19.3
   }
 ]

@@ -259,16 +259,16 @@ v3 의 OOD 검출기는 in-dist 1 + OOD 1 = **N=2** 로만 검증돼 결합 가�
 
 ### 라이브 데모 검증 — 배포된 Space 직접 점검
 
-게이트(VQAv2/POPE)는 표준 benchmark 점수일 뿐, *배포된 데모가 실제로 어떻게 답하는지* 는 별개입니다. 배포 후 [HF Space](https://huggingface.co/spaces/AD-Styles/mini-llava-v4-demo) 에 영어/한국어 · 사실/묘사/yes-no · in-dist/OOD 를 섞은 10 케이스를 직접 입력했습니다 (`scripts/smoke_space_demo.py` → `eval_results/v4_space_smoke.json`).
+게이트(VQAv2/POPE)는 표준 benchmark 점수일 뿐, *배포된 데모가 실제로 어떻게 답하는지* 는 별개입니다. 배포 후 [HF Space](https://huggingface.co/spaces/AD-Styles/mini-llava-v4-demo) 에 영어/한국어 · 사실/묘사/yes-no · in-dist/OOD 를 섞은 10 케이스를 직접 입력했습니다 (`scripts/smoke_space_demo.py` → `eval_results/v4_space_smoke.json`). 데모는 `do_sample=True` (T=0.7) 라 응답이 실행마다 달라집니다 — 아래 인용은 한 번의 대표 실행이며, 짧은 사실 답변은 실행 간 안정적이나 장문 묘사는 변동이 큽니다.
 
-**잘 되는 것** — 장면 분류 ("무슨 방?" → "Kitchen" ✓), yes/no ("헤드폰 쓰고 있나?" → "Yes" ✓), 객체·행동 ("소년이 뭐 하나?" → "Typing" ✓). 결정적으로 — **묘사 요청이 고쳐졌습니다**: "Describe this image" 에 *"In this picture we can see the kitchen with a stove and few other things"* 라고 **온전한 문장으로** 답합니다. 한국어 질문에는 *"이 사진에는 한 여성이 휴대폰을 사용하여 바쁜 방에서 … 물건을 검토하는 모습을 담고 있습니다"* 처럼 **문법적으로 유창한 한국어 서술**을 내놓습니다.
+**잘 되는 것** — 장면 분류 ("무슨 방?" → "Kitchen" ✓), yes/no ("헤드폰 쓰고 있나?" → "Yes" ✓), 객체·행동 ("소년이 뭐 하나?" → "Typing" ✓) 는 반복 실행해도 일관됩니다. 결정적으로 — **묘사 요청이 고쳐졌습니다**: "Describe this image" 에 *"In this picture we can see the kitchen. In front of it there is a stove, in which there are pots and pans. On the right side we can see the cupboard ..."* 처럼 **여러 문장의 구조적 영어 서술**을 내놓고, 한국어 질문에는 **문법적으로 유창한 한국어 문장**으로 답합니다.
 
 **안 되는 것 (정직하게)**:
 - **세밀한 구분 실패** — 고양이를 안은 여성 사진에 "What animal?" → **"Dog"**. 고양이↔개 수준의 fine-grained 구분이 약합니다 (데이터 믹스가 아니라 CLIP-ViT-B/32 + 1.5B 용량의 한계).
-- **긴 묘사 = 환각** — 한국어 장문 묘사는 형식은 유창하나 없는 디테일을 지어냅니다 (고양이 사진을 "벽에 매달린 테디베어" 가 있는 거실로 서술). 짧은 사실 질문엔 강하고, 생성이 길어질수록 환각이 늘어나는 1.5B + 8만 샘플 학습 규모의 분명한 천장입니다.
-- **추상화** — 추상 회화를 "Cats" 로 — OOD 검출기가 걸러야 할 입력입니다 (위 OOD 절).
+- **장문 묘사 = 환각** — 형식은 유창하나 없는 디테일을 지어냅니다. *고양이를 안은 여성* 사진에 한국어 묘사를 시키면 *"한 남성이 주방에서 포장지나 식기를 들고 있는 …"* — 성별·객체·배경이 전부 틀립니다. 짧은 사실 질문엔 강하고, 생성이 길어질수록 환각이 늘어나는 1.5B + 8만 샘플 학습 규모의 분명한 천장입니다.
+- **추상화** — 추상 회화에 "What do you see?" → **"Birds"**. raw 모델은 OOD 입력을 거르지 않고 자신있게 답합니다 (배포 Space 는 raw 모델만 서빙) — OOD 검출기(위 절)가 이런 입력을 가려내야 하는 이유입니다.
 
-요약하면 v4 는 **거친 입도의 VQA(장면·yes/no·객체·행동)와 묘사 형식 생성에서 준수하고, 세밀한 구분과 장문의 사실 정확도에서 약한** 모델입니다. v3 의 데이터-믹스 실수(아래 회고록 Step 6)를 바로잡은 재학습이 "무엇을 물어도 한 단어로 답하던" 문제를 실제로 해소했음을 데모가 보여줍니다 — 동시에 GPT-4V 가 아니라는 점도 정직하게.
+요약하면 v4 는 **거친 입도의 VQA(장면·yes/no·객체·행동)와 묘사 형식 생성에서 준수하고, 세밀한 구분과 장문의 사실 정확도에서 약한** 모델입니다. v4 의 데이터-믹스 실수(아래 회고록 Step 6)를 바로잡은 재학습이 "무엇을 물어도 한 단어로 답하던" 문제를 실제로 해소했음을 데모가 보여줍니다 — 동시에 GPT-4V 가 아니라는 점도 정직하게.
 
 ### 한국어
 

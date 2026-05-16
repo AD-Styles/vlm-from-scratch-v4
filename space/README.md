@@ -16,7 +16,7 @@ license: apache-2.0
 
 - **구조** — CLIP-ViT-B/32 (frozen) + 2-layer MLP Projector + Qwen2.5-1.5B-Instruct
 - **학습** — QLoRA 4-bit (NF4) Stage 1 정렬 → Stage 2 instruction 46K (영문 + 한국어 균형 믹스), RTX 4060 8GB 한 장
-- **평가** — VQAv2 + POPE 표준 benchmark 배포 게이트 통과 (wrapper 없는 raw 모델 기준)
+- **평가** — 배포 게이트 5/5 GO · VQAv2 36.7%→56.8%, POPE 50.0%→71.8% (v3→v4, raw 모델 · wrapper 없음)
 
 v3 와 달리 추론 wrapper (CLIP grounding / 번역 / OOD router) 가 **없습니다**. v3 는
 wrapper 가 raw 모델의 약함을 가렸던 게 문제였고, v4 는 raw 모델 자체를 배포 게이트

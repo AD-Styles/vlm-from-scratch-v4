@@ -6,18 +6,18 @@
 
 ---
 
-## 🎯 v3 가 v4 에 남긴 6가지 숙제 (v3 회고록 인용)
+## 🎯 v3 의 한계 6가지 — v4 의 대응
 
-v3 [회고록의 한계 표](https://github.com/AD-Styles/vlm-from-scratch-v3#%EF%B8%8F-한계와-v4-계획-limitations--next-steps) 6개 항목과, v4 가 각각에 대응한 방식입니다.
+v3 [회고록의 한계 표](https://github.com/AD-Styles/vlm-from-scratch-v3#%EF%B8%8F-한계와-v4-계획-limitations--next-steps)가 남긴 항목과 v4 의 대응입니다. #1~#5 는 v3 가 표로 적어둔 숙제, #6 은 v4 가 재검토하며 추가로 식별한 항목입니다.
 
-| # | v3 의 한계 | v3 의 진단 | v4 의 대응 |
+| # | v3 의 한계 | 진단 | v4 의 대응 |
 |---|---|---|---|
 | 1 | ⭐ **0.5B LLM 의 시각적 추론** | 시각 detail 약함 (cartoon case 등) | **Qwen2.5-1.5B + QLoRA 4-bit** — LLM 키우기 |
 | 2 | POPE threshold 가 test set 으로 튜닝됨 | 70% 일반화 보장 X (untuned 53%) | POPE train/test 분리 후 untuned 재측정 |
-| 3 | OOD 검증 N=2 | 임계값 0.5 일반화 부족 | 만화 + 추상화 + in-distribution 케이스로 ROC AUC 재보정 (ImageNet-O 의존 제거 — HF 공식 미러 없음) |
-| 4 | ⭐ wrapper 11/12 중 8/12 가 router 기여 | "VLM 능력" 보다 "ensemble routing" | LLM 1.5B 가 #1 과 연동되어 자동 해소 검증 |
-| 5 | 한국어 데이터 4K 만 | 환각 잔존 + 한국어 평가셋 없음 | KoLLaVA 를 노트북 한 장에서 끝나는 subset 으로 확장 + 한국어 평가셋 도입 |
-| 6 | ⭐ **학습 데이터 규모** | Stage 1 정렬 5K·Stage 2 13K = LLaVA 의 1~2%. projector 가 5K 로만 학습돼 비전-언어 정렬 자체가 약함 | Stage 1 정렬 데이터 **대폭 확대** (projector-only 라 학습 비용 저렴) + **배포 전 평가 게이트** 도입 |
+| 3 | OOD 검증 N=2 | 임계값 0.5 일반화 부족 | 만화·추상화·in-dist 100 케이스로 ROC AUC 재보정 (N=2 → 100) |
+| 4 | ⭐ wrapper 11/12 중 8/12 가 router 기여 | "VLM 능력" 보다 "ensemble routing" | raw 모델이 게이트 5/5 통과 → router wrapper 불필요 |
+| 5 | 한국어 데이터 4K 만 | 환각 잔존 + 한국어 평가셋 없음 | KoLLaVA 한국어 4K→12K (3배) 확대. 표준 벤치마크 부재로 평가셋은 미도입 |
+| 6 | ⭐ **학습 데이터 규모** | Stage 1 정렬 5K·Stage 2 13K = LLaVA 의 1~2%. projector 가 5K 로만 학습돼 비전-언어 정렬 자체가 약함 | Stage 1 정렬 데이터 5K→40K (8배) 확대 — projector-only 라 학습 비용 저렴 |
 
 ---
 
@@ -51,10 +51,10 @@ v3 [회고록의 한계 표](https://github.com/AD-Styles/vlm-from-scratch-v3#%E
   full finetuning performance"* 라고 명시합니다. v3 는 attention 만 적용했습니다.
 - **`<image>` 신규 토큰 대신 Qwen2.5 내장 `<|image_pad|>` 재사용** — `resize_token_embeddings`
   를 호출하지 않음 → v3 의 "embedding resize → PEFT 가 embed_tokens 자동 저장 →
-  adapter 1GB" (v3 Step 4·5) 문제를 원천 차단. splice 는 token id 로 위치만 찾으므로
+  adapter 1GB" 문제를 원천 차단. splice 는 token id 로 위치만 찾으므로
   토큰 임베딩 품질과 무관.
 
-### 왜 4-bit QLoRA 가 필수인가
+### 왜 4-bit QLoRA 인가
 
 LLM 가중치만 따진 산술 메모리 (1.5B params × dtype 크기):
 
@@ -62,7 +62,7 @@ LLM 가중치만 따진 산술 메모리 (1.5B params × dtype 크기):
 |---|---|
 | fp32 (4 bytes) | 1.5B × 4 ≈ 6 GB |
 | bf16 (2 bytes) | 1.5B × 2 ≈ 3 GB |
-| **4-bit NF4 (0.5 byte)** | **1.5B × 0.5 ≈ 0.9 GB** |
+| **4-bit NF4 (0.5 byte)** | **1.5B × 0.5 ≈ 0.75 GB** |
 
 가중치 외에 activations · gradient · optimizer state 가 더 쌓이므로, 8GB 한 장에서
 1.5B 를 학습하려면 가중치를 최대한 압축하는 4-bit NF4 가 현실적 선택입니다.
@@ -115,7 +115,7 @@ v3 의 projector 는 v1 이 **5K 캡션** 으로 학습한 것을 그대로 물�
 
 ## 🚦 배포 게이트 — 검증을 통과해야 배포
 
-v4 는 성능 검증을 배포 *절차* 안에 넣었습니다 — 검증 없이 배포부터 한 뒤 수습했던 v3 의 경험을, 학습 후 표준 benchmark 게이트로 제도화했습니다.
+v4 는 성능 검증을 배포 절차 안에 넣었습니다. v3 는 검증 없이 배포부터 한 뒤 수습했지만, v4 는 학습이 끝난 모델이 표준 benchmark 게이트를 통과해야만 배포합니다.
 
 [`scripts/eval_gate.py`](scripts/eval_gate.py) 가 학습된 **raw 모델** (추론 wrapper 없이) 을 표준 benchmark 로 측정하고, 사전에 정한 bar 를 통과할 때만 배포를 허용합니다 (exit code 0/1 로 배포 스크립트를 게이팅).
 
@@ -145,7 +145,7 @@ python scripts/vram_test_v4.py --use-lora
 # (3) Stage 1 정렬 데이터 — 40K (이미지 2만 장 × 캡션 2개)
 python scripts/download_alignment_data.py --num-samples 40000 --out data/coco_subset
 
-# (4) Stage 2 instruction 데이터 — the_cauldron 3종(불균등) + KoLLaVA 한국어 → mix 46K
+# (4) Stage 2 instruction 데이터 — the_cauldron 3종 + KoLLaVA 한국어 → mix 46K
 python scripts/download_instruct_data.py --configs vqav2 --num-samples 18000 --out data/instruct_vqav2
 python scripts/download_instruct_data.py --configs localized_narratives --num-samples 10000 --out data/instruct_narr
 python scripts/download_instruct_data.py --configs aokvqa --num-samples 6000 --out data/instruct_aok
@@ -208,7 +208,7 @@ python scripts/ood_roc_analysis.py `
 
 ### 정량 평가 — 표준 benchmark
 
-[`scripts/eval_gate.py`](scripts/eval_gate.py), VQAv2 val + POPE test. **v4 는 n=400** (v2/v3 는 v3 README 의 n=50 측정값 — 20%p 격차는 표본 오차를 크게 상회).
+[`scripts/eval_gate.py`](scripts/eval_gate.py), VQAv2 val + POPE test. **v4 는 n=400 으로 측정**했습니다. v2/v3 수치는 v3 README 의 소표본 측정값이라 표본 오차가 있지만, 20%p 안팎의 격차는 그 오차를 크게 상회합니다.
 
 | | v2 | v3 raw | v3 + wrapper | **v4 raw** |
 |---|---|---|---|---|
@@ -230,7 +230,7 @@ v3 의 OOD 검출기는 in-dist 1 + OOD 1 = **N=2** 로만 검증돼 결합 가�
 |---|---|---|
 | 결합 가중치 w_clip | 0.6 (미보정 추측) | **0.0** (ROC 최적 — entropy 단독) |
 | 결합 ROC AUC | 0.884 † | **0.971** |
-| 정직한 일반화 (5-fold CV) | — | **0.969** |
+| 5-fold 교차검증 AUC | — | **0.969** |
 | 판정 정확도 · TPR | — | **91% · 90%** (임계값 0.4582, FPR 7.5%) |
 
 † v3 의 w_clip 0.6 을 v4 모델·벤치마크에 적용했을 때의 결합 AUC.
@@ -264,7 +264,7 @@ v3 의 OOD 검출기는 in-dist 1 + OOD 1 = **N=2** 로만 검증돼 결합 가�
 - **장문 묘사 = 환각** — 형식은 유창하나 없는 디테일을 지어냅니다. *고양이 안은 여성* 사진을 *"한 남성이 주방에서 …"* 로 서술하는 식으로 성별·객체·배경이 틀립니다. 짧은 답에 강하고 길어질수록 환각이 느는, 1.5B 규모의 분명한 천장입니다.
 - **추상화** — 추상 회화에 "What do you see?" → **"Birds"**. raw 모델은 OOD 입력을 거르지 않고 자신있게 답합니다 (배포 Space 는 raw 모델만 서빙) — OOD 검출기(위 절)가 이런 입력을 가려내야 하는 이유입니다.
 
-요약하면 v4 는 **거친 입도의 VQA(장면·yes/no·객체·행동)와 묘사 형식 생성에 강하고, 세밀한 구분과 장문의 사실 정확도에 약한** 모델입니다 — 1.5B + 8GB 한 장이라는 제약 안에서 v3 를 분명히 넘어섰습니다.
+요약하면 v4 는 **장면·yes/no·객체·행동 같은 큰 단위의 VQA 와 묘사 형식 생성에 강하고, 세밀한 구분과 장문의 사실 정확도에 약한** 모델입니다 — 1.5B + 8GB 한 장이라는 제약 안에서 v3 를 분명히 넘어섰습니다.
 
 ### 한국어
 
@@ -284,9 +284,9 @@ v4 는 Mini-LLaVA 시리즈 (v1 → v4) 의 마지막 버전입니다. v3 가 �
 - **한국어 3배 (homework #5 의 절반)** — 학습 데이터 4K→12K, 라이브 데모에서 유창한 한국어 응답 확인.
 
 **해결하지 못한 한계**
-- **세밀한 구분 · 장문 생성** — 라이브 데모 검증에서 드러난 대로, 거친 VQA 는 준수하나 고양이↔개 같은 fine-grained 구분과 긴 묘사형 생성(환각)에서 약합니다. 1.5B + 8만 샘플 학습 규모의 천장으로, 모델을 키우거나(8GB 메모리 한계) 데이터를 수십만 규모로 늘리지 않는 한 남는 한계입니다.
+- **세밀한 구분 · 장문 생성** — 라이브 데모 검증에서 드러난 대로, 거친 VQA 는 준수하나 고양이↔개 같은 fine-grained 구분과 긴 묘사형 생성(환각)에서 약합니다. 1.5B + 약 9만 샘플 학습 규모의 천장으로, 모델을 키우거나(8GB 메모리 한계) 데이터를 수십만 규모로 늘리지 않는 한 남는 한계입니다.
 - **한국어 정량 평가셋** — homework #5 의 미완 절반. 학습 데이터는 4K→12K 로 늘렸으나, 신뢰할 만한 한국어 VLM 표준 벤치마크 부재로 객관적 정량 평가셋을 끝내 만들지 못했습니다 (한국어 능력은 라이브 데모 정성 평가로 갈음).
-- **배포 정밀도 갭** — LoRA 는 4-bit base 에서 학습됐으나 무료 CPU 데모는 fp32 base 에 얹어 추론합니다 (QLoRA 의 표준 배포 절충). `diag_deploy_gap.py` 로 4-bit/fp32 답변을 직접 비교한 결과 차이는 거의 없었지만 — 원리상 미세한 분포 차이는 존재하며, GPU Space 였다면 4-bit 그대로 서빙해 해소됐을 항목입니다.
+- **배포 정밀도 갭** — LoRA 는 4-bit base 에서 학습됐으나 무료 CPU 데모는 fp32 base 에 얹어 추론합니다 (QLoRA 의 표준 배포 절충). `scripts/diag_deploy_gap.py` 로 4-bit/fp32 답변을 직접 비교한 결과 차이는 거의 없었지만 — 원리상 미세한 분포 차이는 존재하며, GPU Space 였다면 4-bit 그대로 서빙해 해소됐을 항목입니다.
 
 **의도적으로 다루지 않은 확장 방향** (이 시리즈의 범위 밖)
 - **ViT-L/14 비전 인코더** — v3 가 0.5B 한계로 효과 없다고 결론냈고, v4 는 "LLM 크기" 단일 변수 비교를 위해 ViT-B/32 를 유지. 1.5B 에서 ViT-L/14 가 다시 효과 있는지는 검증하지 않았습니다.

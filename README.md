@@ -6,25 +6,10 @@ LLaVA-1.5 구조를 **소비자용 GPU 한 장**이라는 제약 안에서 재�
 
 ## 구조
 
-```
-  이미지 224×224                     텍스트 + <image> placeholder
-       │                                     │
-  CLIP-ViT-B/32 (frozen)            Qwen2.5 tokenizer + embedding
-       │  49 patch × 768-d                   │
-  ★ 2-layer MLP Projector                    │
-       │  49 × 1536                          │
-       └──────────────┬──────────────────────┘
-                       │  <image> 위치를 49개 patch 임베딩으로 교체 (splice)
-                       ▼
-        Qwen2.5-1.5B-Instruct  (4-bit NF4 frozen + ★ LoRA r=16)
-                       ▼
-                   텍스트 응답
-
-  ★ = 학습 대상 (projector fp32 / LoRA bf16). CLIP·LLM base 는 frozen.
-```
+이미지를 CLIP 으로 인코딩하고, projector 로 LLM 의 임베딩 공간에 맞춘 뒤, 텍스트 시퀀스의 `<image>` 자리에 그 patch 임베딩을 끼워 넣어 Qwen2.5 가 함께 처리합니다.
 
 - **비전** — CLIP-ViT-B/32, frozen. 224px 입력을 49개 patch × 768-d 로 인코딩.
-- **Projector** — 2-layer MLP (768 → 1536, GELU). LLaVA-1.5 의 `mlp2x_gelu` 와 동일.
+- **Projector** — 2-layer MLP (768 → 1536, GELU), 학습 대상. LLaVA-1.5 의 `mlp2x_gelu` 와 동일.
 - **LLM** — Qwen2.5-1.5B-Instruct. 4-bit NF4 로 frozen 하고 LoRA(r=16) 만 학습.
 
 ## 직접 구현한 부분
@@ -88,33 +73,6 @@ v1 부터 네 번에 걸쳐 만들면서 배운 것과, v4 를 마치며 남기�
 - **평가에서 데이터가 새면 숫자가 거짓말을 한다.** v3 는 POPE 판정 임계값을 test set 으로 튜닝했고, 그렇게 나온 70% 는 일반화를 보장하지 못했습니다 (튜닝 전엔 53%). v4 는 train/test 를 분리해 이 문제를 없앴습니다.
 
 **v4 를 마치며.** v4 는 목표한 것을 해냈지만 성능 자체는 제한적입니다. VQAv2 56.8% / POPE 71.8% 는 공개 소형 VLM 에 못 미치고, 1.5B·8GB·약 9만 샘플이라는 천장은 더 큰 모델이나 수십만 규모 데이터 없이 넘기 어렵습니다. 다시 한다면, 게이트·OOD ROC 같은 평가 작업도 의미는 있었지만 그중 일부 시간을 Stage 1 정렬 데이터를 더 키우는 데 썼을 겁니다 — 데이터 규모가 병목의 절반이라는 걸 비교적 늦게 깨달았기 때문입니다. 한국어도 학습 데이터는 4K→12K 로 늘렸으나 신뢰할 표준 벤치마크가 없어 정량 평가셋은 만들지 못했습니다. 배포 면에서는 학습(4-bit)과 무료 CPU 데모(fp32) 사이의 정밀도 절충이 남아 있습니다 (`scripts/diag_deploy_gap.py` 비교상 답변 차이는 거의 없음).
-
-## 재현
-
-환경: Windows 11 · RTX 4060 Laptop 8GB · Python 3.11. 데이터셋은 HuggingFace 에서 받습니다.
-
-```powershell
-pip install -r requirements.txt
-
-# Stage 1 — projector 정렬
-python -m src.train --data-path data/coco_subset/manifest.json `
-  --output-dir checkpoints/v4_stage1 `
-  --batch-size 1 --grad-accum-steps 8 --epochs 1 --lr 1e-3 --use-qlora --bf16
-
-# Stage 2 — QLoRA instruction tuning
-python -m src.train --data-path data/v4_stage2_mix/manifest.json `
-  --output-dir checkpoints/v4_stage2_qlora `
-  --init-projector checkpoints/v4_stage1/projector.pt `
-  --batch-size 1 --grad-accum-steps 8 --epochs 1 --lr 2e-4 `
-  --use-qlora --use-lora --lora-r 16 --lora-alpha 32 --bf16
-
-# 배포 게이트 — raw 모델 평가
-python scripts/eval_gate.py --n-vqav2 400 --n-pope 400 `
-  --projector checkpoints/v4_stage2_qlora/projector.pt `
-  --lora-adapter checkpoints/v4_stage2_qlora/lora_adapter
-```
-
-데이터 다운로드·믹스, POPE 분할, OOD 분석 등 나머지 스크립트는 `scripts/` 에 있습니다.
 
 ## 링크
 

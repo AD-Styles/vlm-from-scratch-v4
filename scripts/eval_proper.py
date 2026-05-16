@@ -16,15 +16,14 @@ v4 배포 게이트(scripts/eval_gate.py)가 이 모듈의 데이터 로더·평
 """
 from __future__ import annotations
 
-import io
 import sys
 import time
 from pathlib import Path
 
-# Windows cp949 콘솔/파이프에서 한글·em-dash(—) 출력 시 UnicodeEncodeError 방지.
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
-
+# eval_proper 는 라이브러리 모듈이라 sys.stdout/stderr 를 직접 재설정하지 않는다.
+# UTF-8 래핑은 진입점(scripts/eval_gate.py)이 한 번만 수행한다 — 라이브러리가
+# 또 래핑하면 이중 래핑으로 공용 버퍼가 조기 close 돼 "I/O operation on
+# closed file" 로 크래시한다.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # IMPORTANT: datasets MUST be imported BEFORE torch on Windows.

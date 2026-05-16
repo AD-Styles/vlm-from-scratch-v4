@@ -21,13 +21,14 @@
   - 결합 가중치(weight_clip)와 판정 임계값(threshold)은 calibration set 으로 함께
     보정한다. v4 는 100 케이스 OOD 벤치마크 (in-dist 40 + 만화 30 + 추상화 30)
     위에서 ROC 분석을 수행했다 (scripts/ood_roc_analysis.py):
-      · v3 기본 가중치(CLIP 0.6)의 결합 ROC AUC = 0.848
-      · w_clip 스윕 → 최적 0.35 에서 AUC = 0.897 (5-fold CV 0.892 — 과적합 아님)
-      · 그 가중치에서 Youden's J 최적 임계값 = 0.35 (정확도 86%, TPR 92%)
-    CLIP·entropy 는 상보적이라 어느 한쪽 단독(0.66 / 0.855)보다 0.35:0.65 결합이
-    낫다. v3 의 초기값(CLIP 0.6 / threshold 0.5)은 N=2 검증뿐이라 미보정 상태였고
-    같은 벤치마크 정확도 53% 로 OOD 대부분을 놓침이 실측됐다 → 기본값 재보정.
-    (v3 회고록 숙제 #3 완수.)
+      · 신호 단독 ROC AUC — CLIP 0.66, LLM first-token entropy 0.971
+      · w_clip 0→1 스윕이 단조 감소 → 최적 w_clip = 0.0 (entropy 단독), AUC 0.971
+        (5-fold CV 0.969 — 과적합 아님)
+      · 그 지점 Youden's J 최적 임계값 = 0.4582 (정확도 91%, TPR 90%, FPR 7.5%)
+    재학습한 v4 모델은 first-token entropy 만으로 OOD 를 거의 가른다 — CLIP
+    image-text 유사도는 만화 얼굴조차 "a person" 으로 매칭해 신호를 흐려, 결합할수록
+    AUC 가 떨어진다. v3 초기값(CLIP 0.6 / threshold 0.5)은 N=2 검증뿐이라 미보정
+    이었고 같은 벤치마크 정확도 53% 였다 → 전면 재보정. (v3 회고록 숙제 #3 완수.)
 """
 from __future__ import annotations
 
@@ -111,9 +112,9 @@ class OODDetector:
         self,
         clip_model_name: str = "openai/clip-vit-base-patch32",
         categories: Optional[list[str]] = None,
-        threshold: float = 0.35,   # v4 ROC 재보정 (scripts/ood_roc_analysis.py)
-        weight_clip: float = 0.35,    # v4 가중치 최적화 (이전 0.6 — CLIP 과대평가)
-        weight_entropy: float = 0.65,
+        threshold: float = 0.4582,  # v4 ROC 재보정 (scripts/ood_roc_analysis.py)
+        weight_clip: float = 0.0,     # 재학습 모델 기준 최적 — entropy 단독 (CLIP 기여 0)
+        weight_entropy: float = 1.0,
         device: Optional[str] = None,
     ):
         if not 0.0 <= threshold <= 1.0:

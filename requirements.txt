@@ -1,0 +1,20 @@
+# v4 학습 환경 (RTX 4060 Laptop 8GB) 에서 검증된 lower bounds.
+# v3 대비 신규: bitsandbytes (QLoRA 4-bit NF4 양자화) — Qwen2.5-1.5B 를 8GB 에 fit.
+torch>=2.6.0
+torchvision>=0.21.0
+transformers>=5.0.0
+accelerate>=0.30.0
+peft>=0.19.1
+datasets>=2.18.0
+huggingface_hub>=1.0.0
+pillow>=10.0.0
+gradio>=6.0.0
+einops>=0.7.0
+sentencepiece>=0.1.99
+protobuf>=4.25.0
+tqdm>=4.66.0
+
+# ── v4 신규: QLoRA 4-bit NF4 양자화 ────────────────────────────────
+# Windows wheel 은 0.43.0+ 에서 안정 지원 (Triton 의존성 해소).
+# portfolio 10 (unsloth-qlora-finetuning) 에서 검증된 기법 재사용.
+bitsandbytes>=0.43.0

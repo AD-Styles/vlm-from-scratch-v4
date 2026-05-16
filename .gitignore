@@ -1,0 +1,46 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+checkpoints/*
+!checkpoints/.gitkeep
+
+data/
+*.pt
+*.bin
+*.safetensors
+
+.ipynb_checkpoints/
+.DS_Store
+.idea/
+.vscode/
+
+# 학습 완료 마커 + Phase 2/3 record (로컬 전용)
+TRAINING_DONE.txt
+*.flag
+
+# 혹시 모를 토큰 파일 (절대 commit 금지)
+hf_*.txt
+*token*.txt
+*.token
+
+# 사용자 캡처 스크린샷 (선택 — 보존하려면 이 두 줄 제거)
+# assets/*.png
+# assets/*.jpg
+
+# 로컬 디버그/실험 산출물 — git tracking X
+eval_results/_partial_*.json
+eval_results/*_log.txt
+eval_results/*_log_*.txt
+eval_results/debug.txt
+eval_results/v2_vs_v3_*.json
+eval_results/v2_vs_v3_*.md
+scripts/_check_*.py
+scripts/_debug_*.py
+scripts/_inspect_*.py
+scripts/_probe_*.py
+scripts/_test_korean_response.py
+scripts/eval_v2_vs_v3.py

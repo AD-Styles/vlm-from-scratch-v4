@@ -319,16 +319,21 @@ class MiniLLaVA(nn.Module):
             text_embeds, attention_mask, image_embeds, input_ids, labels=None
         )
 
-        return self.llm.generate(
+        # do_sample=False (greedy) 인데 temperature/top_p 를 넘기면 transformers 가
+        # "temperature is set but do_sample is False" 경고를 매 호출 띄운다 — 게이트
+        # 평가는 greedy 라 경고가 수백 번 반복된다. sampling 일 때만 인자를 전달한다.
+        gen_kwargs = dict(
             inputs_embeds=merged_embeds,
             attention_mask=merged_mask,
             max_new_tokens=max_new_tokens,
-            temperature=temperature,
-            top_p=top_p,
             do_sample=do_sample,
             pad_token_id=self.tokenizer.pad_token_id,
             eos_token_id=self.tokenizer.eos_token_id,
         )
+        if do_sample:
+            gen_kwargs["temperature"] = temperature
+            gen_kwargs["top_p"] = top_p
+        return self.llm.generate(**gen_kwargs)
 
     # ──────────────────────────────────────────────────────────────────
     # Checkpoint I/O — projector만 저장 (LLM/CLIP은 HF에서 다시 로드)

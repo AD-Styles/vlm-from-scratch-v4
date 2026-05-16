@@ -15,7 +15,7 @@ v4 default: Qwen2.5-1.5B + QLoRA 4-bit NF4 + bf16 + gradient checkpointing
     --data-path data/v4_stage2_mix/manifest.json \\
     --output-dir checkpoints/v4_stage2_qlora \\
     --init-projector checkpoints/v4_stage1/projector.pt \\
-    --batch-size 1 --grad-accum-steps 8 --epochs 2 --lr 2e-4 \\
+    --batch-size 1 --grad-accum-steps 8 --epochs 1 --lr 2e-4 \\
     --use-qlora --use-lora --lora-r 16 --lora-alpha 32 --bf16
 """
 from __future__ import annotations

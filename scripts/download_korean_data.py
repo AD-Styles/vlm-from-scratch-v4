@@ -15,8 +15,8 @@ Format: v2 의 manifest 형식과 동일 ({image, question, answer, source})
   # 소규모 검증 — 100 샘플로 파이프라인 동작 확인
   python scripts/download_korean_data.py --num-samples 100 --out data/korean_subset_test
 
-  # 전체 다운로드 (4K)
-  python scripts/download_korean_data.py --num-samples 4000 --out data/korean_subset
+  # v4 Stage 2 학습 규모 (12K — v3 의 4K 대비 3배)
+  python scripts/download_korean_data.py --num-samples 12000 --out data/korean_subset
 """
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ IMAGE_TOKEN_RE = re.compile(r"\s*<image>\s*\n?|\n?\s*<image>\s*")
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--num-samples", type=int, default=4000)
+    p.add_argument("--num-samples", type=int, default=12000)
     p.add_argument("--out", type=str, default="data/korean_subset")
     p.add_argument(
         "--inspect", action="store_true", help="저장 없이 5 샘플만 print"

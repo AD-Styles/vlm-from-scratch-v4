@@ -63,9 +63,11 @@ def parse_args():
                    default="checkpoints/v4_stage2_qlora/projector.pt")
     p.add_argument("--lora-adapter", type=str,
                    default="checkpoints/v4_stage2_qlora/lora_adapter")
-    p.add_argument("--n-vqav2", type=int, default=100,
-                   help="VQAv2 평가 샘플 수 (게이트 결정의 안정성 위해 v3 의 50보다 늘림)")
-    p.add_argument("--n-pope", type=int, default=100)
+    p.add_argument("--n-vqav2", type=int, default=400,
+                   help="VQAv2 평가 샘플 수. 기본 400 — 회고록 Step 6 참고: "
+                        "n=100 은 표본 오차(SE≈4.8%p)로 게이트 판정이 흔들려 "
+                        "n=400 으로 안정화한 값.")
+    p.add_argument("--n-pope", type=int, default=400)
     p.add_argument("--out", type=str, default="eval_results/v4_gate_report.json")
     return p.parse_args()
 

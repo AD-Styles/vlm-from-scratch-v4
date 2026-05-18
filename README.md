@@ -36,7 +36,7 @@ LLaVA-1.5 의 2단계 학습을 따랐습니다 — 먼저 projector 만 정렬�
 - Stage 2 믹스는 VQAv2 18K(짧은 사실) + LocalizedNarratives 10K(긴 묘사) + A-OKVQA 6K(추론) + KoLLaVA 12K(한국어). 한 능력에 치우치지 않도록 의도적으로 섞었습니다.
 - 학습 루프 `src/train.py` — cosine LR + warmup, grad clipping, 중간 체크포인트 저장.
 
-## 📊 결과 (Results)
+## 📊 결과 (Results).
 
 ### 정량 평가 — VQAv2 · POPE
 

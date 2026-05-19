@@ -1,6 +1,6 @@
 # Mini-LLaVA v4 — 8GB 노트북 GPU 한 장에서 조립·학습한 비전-언어 모델
 
-> v1 → v4 로 이어진 from-scratch 비전-언어 모델(VLM) 시리즈의 **마지막 버전**. CLIP 비전 인코더와 Qwen2.5-1.5B 언어 모델을 `LlavaForConditionalGeneration` 같은 통합 클래스 없이 직접 이어 붙였습니다. [v3](https://github.com/AD-Styles/vlm-from-scratch-v3) 회고록이 진짜 병목으로 지목한 **0.5B LLM 을 1.5B 로 키우고**, 8GB VRAM 한계는 **QLoRA 4-bit** 로, 배포는 **사전 게이트** 로, 분포 밖 입력 환각은 **OOD abstention 배너** 로 닫았습니다 — 학습 / 평가 / 배포를 각각의 게이트로 검증한 마무리 버전. SOTA 가 아니라 *소비자용 GPU 한 장* 이라는 제약 안에서 LLaVA-1.5 구조가 어디까지 되는지 확인하는 것이 목표입니다.
+> v1 → v4 로 이어진 from-scratch 비전-언어 모델(VLM) 시리즈의 **마지막 버전**. CLIP 비전 인코더와 Qwen2.5-1.5B 언어 모델을 `LlavaForConditionalGeneration` 같은 통합 클래스 없이 직접 이어 붙였습니다. [v3](https://github.com/AD-Styles/vlm-from-scratch-v3) 회고록이 진짜 병목으로 지목한 **0.5B LLM 을 1.5B 로 키웠고**, 8GB VRAM 한계는 **QLoRA 4-bit** 로 풀었습니다. 배포 전 **사전 게이트**, 분포 밖 입력에는 **OOD abstention 배너** 를 더해 학습·평가·배포를 각각 검증한 마무리 버전입니다. SOTA 가 아니라 *소비자용 GPU 한 장* 이라는 제약 안에서 LLaVA-1.5 구조가 어디까지 되는지 확인하는 것이 목표입니다.
 
 ---
 
@@ -42,7 +42,7 @@
 
 ### ▸ 왜 1.5B 인가
 
-v3 는 0.5B 를 썼고, 회고에서 시각 detail 약함의 진짜 병목을 0.5B LLM 의 추론 능력으로 진단했습니다. v4 는 그 진단을 직접 검증하려고 **"LLM 크기" 단일 변수만** 키웠습니다 — vision encoder 는 ViT-B/32 그대로입니다 (v3 Step 2 의 ViT-L/14 ablation 이 0.5B 환경에서 효과 없음을 이미 확인). 8GB VRAM 에 1.5B 를 fp16 으로 올리면 가중치만 ~3GB + activation 으로 OOM 위험이라, 4-bit 양자화가 사실상 필수였습니다.
+v3 는 0.5B 를 썼고, 회고에서 시각 detail 약함의 진짜 병목을 0.5B LLM 의 추론 능력으로 진단했습니다. v4 는 그 진단을 직접 검증하려고 **"LLM 크기" 단일 변수만** 키웠습니다 — vision encoder 는 ViT-B/32 그대로입니다 (v3 Step 2 의 ViT-L/14 ablation 이 0.5B 환경에서 효과 없음을 이미 확인).
 
 ---
 
@@ -93,7 +93,7 @@ LLaVA-1.5 의 2단계 학습을 따랐습니다 — 먼저 projector 만 정렬�
 
 - batch_size 1 + grad_accum 8 (effective batch 8), gradient checkpointing ON — Stage 1·2 모두 OOM 없이 8GB 한 장에서 완주했습니다.
 - 학습 루프 `src/train.py` — cosine LR + warmup, gradient clipping, 중간 체크포인트 저장.
-- 위 loss·step·시간은 v4 학습 당시 **콘솔 관측값** 입니다 — 본 학습은 step별 로그를 파일로 남기지 않았습니다. `src/train.py` 는 이후 학습부터 step별 loss 를 `eval_results/train_log_*.csv` 로 기록합니다.
+- 위 loss·step·시간은 v4 학습 당시 **콘솔 관측값** 입니다 — 본 학습은 step별 로그를 파일로 남기지 않아, 같은 누락을 막도록 `src/train.py` 에 step별 loss CSV 로깅(`eval_results/train_log_*.csv`)을 추가해 뒀습니다.
 
 ---
 
@@ -142,7 +142,7 @@ v3 는 POPE 에서 전부 "yes" 만 답해 사실상 랜덤(50%)이었지만, v4
 | `source_dog.jpg` (학습 분포 안) | `source_pikachu.png` (학습 분포 밖, 만화) |
 |:---:|:---:|
 | <img src="assets/source_dog.jpg" width="220" alt="강아지 + 헬로키티 모자" /> | <img src="assets/source_pikachu.png" width="220" alt="피카츄 + 선장 모자" /> |
-| 일반 객체 VQA | OOD 입력 — 분포 밖 만화 캐릭터 |
+| 일반 객체 VQA | 분포 밖 만화 — 모델이 확신해 오답, OOD 배너 미발생 (↓ OOD 검출의 한계 사례) |
 
 ### ▸ 배포 Space 스모크 점검
 
@@ -161,7 +161,7 @@ v3 는 POPE 에서 전부 "yes" 만 답해 사실상 랜덤(50%)이었지만, v4
 | OOD · 만화 | What is in this image? | Girl. | ⚠️ 분포 밖 — OOD 배너 정상 (0.56) |
 | OOD · 추상화 | What do you see in this picture? | Birds. | ⚠️ 분포 밖 오답 — OOD 배너 정상 (0.61) |
 
-정리하면 — 장면·yes/no·단순 객체 같은 **짧은 영어 사실형은 안정적**이고, 세밀한 구분(고양이↔개)과 장문 묘사는 약하며(형식은 유창하나 없는 디테일을 지어냄), 한국어 장문은 환각이 잦습니다. OOD abstention 배너는 만화·추상화 두 OOD 입력에서 정상 동작했습니다. 표의 1·2행은 같은 in-dist 사진(질문만 영어/한국어로 다름)이라 OOD score 가 0.48 로 동일합니다 — OOD 점수는 질문이 아니라 이미지 속성이라 같은 값이고, 임계값 0.46 을 살짝 넘어 배너가 떴는데 보정 FPR 7.5% 와 일치하는 경계값 오탐입니다. 배너는 답변 *내용* 을 바꾸지 않고 신뢰도만 표시합니다.
+정리하면 — 장면·yes/no·단순 객체 같은 **짧은 영어 사실형은 안정적**이고, 세밀한 구분(고양이↔개)과 장문 묘사는 약하며(형식은 유창하나 없는 디테일을 지어냄), 한국어 장문은 환각이 잦습니다. OOD 배너는 만화·추상화 입력에서 정상 동작했고, 1·2행(같은 in-dist 사진)의 0.48 배너는 임계값을 살짝 넘은 경계값 오탐입니다.
 
 ---
 
@@ -186,11 +186,8 @@ entropy 단독이 AUC **0.971** 로 가장 강했고(CLIP image-text 유사도�
 | **LoRA 대상** | attention q/k/v/o | **all-linear** (+ gate/up/down MLP) — QLoRA 논문 정석 |
 | **이미지 토큰** | 새 토큰 추가 → adapter 1GB | **내장 `<\|image_pad\|>` 재사용** → resize 자체를 제거 |
 | **raw VQAv2 / POPE** | 36.7% / 50.0% | **56.8% / 71.8%** |
-| **배포 절차** | 학습 직후 배포 (성능 미달을 라이브에서 발견) | **사전 게이트** — 기준 통과 시에만 배포 |
 | **분포 밖 입력** | 추론 wrapper 가 점수에 개입 | **OOD abstention 배너** — 답변 불변, 신뢰도만 표시 |
 | **성능 보강 방식** | CLIP grounding·OOD router 등 추론 wrapper | **raw 모델 자체 강화** (wrapper 없음) |
-
-v3 는 raw 모델의 약함을 추론 wrapper(CLIP grounding 등)로 가렸고, 그 wrapper 가 올린 점수의 상당 부분은 모델 능력이 아니라 routing 이었습니다. v4 는 wrapper 를 걷어내고 raw 모델 자체를 키워, 게이트가 측정하는 56.8% / 71.8% 가 모델의 실제 능력입니다.
 
 ---
 
@@ -208,11 +205,11 @@ v1·v2 에서 CLIP·projector·LLM 을 잇는 기본 구조를 만들었고, v3 
 |---|---|---|
 | **검증은 배포 앞에 와야 한다** | 학습 직후 배포 → 성능 문제를 라이브에서 발견 | 통과 기준을 배포 *전에* 고정, 게이트를 절차에 삽입 |
 | **도구가 왜 그렇게 동작하는지 알아야 한다** | 새 토큰 추가가 `embed_tokens` 저장까지 연쇄됨을 모름 → adapter 1GB | 내장 토큰 재사용 — 버그를 *고치는* 게 아니라 *안 만드는* 방향 |
-| **평가에서 데이터가 새면 숫자가 거짓말한다** | POPE 임계값을 test set 으로 튜닝 → 70% 가 일반화 보장 못 함 | train/test 분리로 누수 제거 |
+| **평가에서 데이터가 새면 숫자가 거짓말한다** | POPE 임계값을 test set 으로 튜닝 → 70% 가 일반화 보장 못 함 | 임계값을 없애고 yes/no 를 직접 채점 — 튜닝할 값이 없어 누수가 불가능 |
 
 ### ▸ v4 를 마치며
 
-v4 는 목표한 것을 해냈지만 성능 자체는 제한적입니다. VQAv2 56.8% / POPE 71.8% 는 공개 소형 VLM 에 못 미치고, 1.5B·8GB·약 9만 샘플이라는 천장은 분명합니다 — 다만 이 시리즈의 목표는 SOTA 가 아니라 *제약 안에서 끝까지 검증된 구현* 이었습니다. v3 가 *분석* 으로만 끝낸 OOD 숙제는 이번엔 데모의 abstention 레이어로 닫았습니다. 이건 v3 가 거부했던 "성능 wrapper" 와 다릅니다 — v3 wrapper 는 답변을 바꿔 벤치마크 점수를 부풀렸지만(그래서 거부), abstention 레이어는 답변을 바꾸지 않고 신뢰도만 표시하므로 게이트의 raw 측정을 건드리지 않습니다.
+v4 는 목표한 것을 해냈지만 성능 자체는 제한적입니다. VQAv2 56.8% / POPE 71.8% 는 공개 소형 VLM 에 못 미치고, 1.5B·8GB·약 9만 샘플이라는 천장은 분명합니다 — 다만 이 시리즈의 목표는 SOTA 가 아니라 *제약 안에서 끝까지 검증된 구현* 이었습니다. v3 가 *분석* 으로만 끝낸 OOD 숙제는 이번엔 데모의 abstention 레이어로 닫았습니다. 이건 v3 가 거부했던 "성능 wrapper" 와 다릅니다 — v3 wrapper 는 답변을 바꿔 벤치마크 점수를 부풀렸지만(그래서 거부), abstention 레이어는 답변을 바꾸지 않으므로 게이트의 raw 측정도 그대로입니다.
 
 학습은 4-bit QLoRA, 무료 CPU 데모는 fp32 라 정밀도 차이가 있지만, 진단 케이스에서 두 config 의 답변이 모두 일치해 배포 환경이 결과를 왜곡하지 않는 것을 확인했습니다 (`scripts/diag_deploy_gap.py`).
 

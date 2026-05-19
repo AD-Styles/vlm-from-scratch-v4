@@ -8,11 +8,13 @@ LLaVA-1.5 구조를 **소비자용 GPU 한 장**이라는 제약 안에서 재�
 
 ## 🏗️ 구조 (Architecture)
 
-이미지를 CLIP 으로 인코딩하고, projector 로 LLM 의 임베딩 공간에 맞춘 뒤, 텍스트 시퀀스의 `<image>` 자리에 그 patch 임베딩을 끼워 넣어 Qwen2.5 가 함께 처리합니다.
+이미지를 CLIP 으로 인코딩하고, projector 로 LLM 의 임베딩 공간에 맞춘 뒤, 텍스트 시퀀스의 `<image>` 자리에 그 patch 임베딩을 끼워 넣어 Qwen2.5 가 함께 처리
 
-- **비전** — CLIP-ViT-B/32, frozen. 224px 입력을 49개 patch × 768-d 로 인코딩.
-- **Projector** — 2-layer MLP (768 → 1536, GELU), 학습 대상. LLaVA-1.5 의 `mlp2x_gelu` 와 동일.
-- **LLM** — Qwen2.5-1.5B-Instruct. 4-bit NF4 로 frozen 하고 LoRA(r=16) 만 학습.
+- **비전** — CLIP-ViT-B/32, frozen. 224px 입력을 49개 patch × 768-d 로 인코딩
+- **Projector** — 2-layer MLP (768 → 1536, GELU), 학습 대상. LLaVA-1.5 의 `mlp2x_gelu` 와 동일
+- **LLM** — Qwen2.5-1.5B-Instruct. 4-bit NF4 로 frozen 하고 LoRA(r=16) 만 학습
+
+---
 
 ## 🔧 직접 구현한 부분 (Implementation)
 

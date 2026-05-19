@@ -1,8 +1,10 @@
-# Mini-LLaVA v4 — 8GB 노트북 GPU 한 장에서 조립·학습한 비전-언어 모델.
+# Mini-LLaVA v4 — 8GB 노트북 GPU 한 장에서 조립·학습한 비전-언어 모델
 
 CLIP 비전 인코더와 Qwen2.5-1.5B 언어 모델을 직접 이어 붙여 만든 소형 비전-언어 모델(VLM)입니다. HuggingFace 의 `LlavaForConditionalGeneration` 같은 통합 클래스를 쓰지 않고, 이미지 임베딩을 텍스트 시퀀스에 끼워 넣는 융합 로직을 저수준에서 직접 구현했습니다. 학습은 RTX 4060 Laptop 8GB 한 장에서 QLoRA 4-bit 로 진행했습니다.
 
 LLaVA-1.5 구조를 **소비자용 GPU 한 장**이라는 제약 안에서 재현해 보는 학습용 프로젝트입니다. 8GB VRAM 과 약 9만 개의 학습 샘플(LLaVA-1.5 는 120만+)로 어디까지 되는지 확인하는 것이 목표이고, SOTA 성능이 목표는 아닙니다. v1→v4 로 이어진 시리즈의 마지막 버전이며, v3 대비 가장 큰 변경은 LLM 을 0.5B 에서 1.5B 로 키운 것입니다.
+
+---
 
 ## 🏗️ 구조 (Architecture)
 

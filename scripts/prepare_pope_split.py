@@ -11,7 +11,7 @@ POPE 데이터 소스: lmms-lab/POPE (Hugging Face), category 3종 (random, popu
   # 검사 모드 — 데이터 구조 확인 (저장 X)
   python scripts/prepare_pope_split.py --inspect
 
-  # 본 분리 — category 별 train 80 + test 80 = 총 480 (3 category × 160)
+  # 본 분리 — category 별 train 80 + test 80 (=160) × 3 category = 총 480
   python scripts/prepare_pope_split.py --train-per-category 80 --test-per-category 80
 
   # 작은 셋 (빠른 반복용)
@@ -84,7 +84,7 @@ def main():
 
     print(f"[1/3] POPE streaming + category 분리")
     by_category: dict[str, list[dict]] = {c: [] for c in POPE_CATEGORIES}
-    target_per_cat = (args.train_per_category + args.test_per_category) * 2  # 30% 여유
+    target_per_cat = (args.train_per_category + args.test_per_category) * 2  # 2배 수집 (이미지 누락 대비 여유분)
 
     ds = load_dataset(POPE_DATASET, split="test", streaming=True)
     pbar = tqdm(total=target_per_cat * len(POPE_CATEGORIES), desc="loading")

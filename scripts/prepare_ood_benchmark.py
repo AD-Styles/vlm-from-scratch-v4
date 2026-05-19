@@ -166,8 +166,8 @@ def collect_ood(args, candidates: list[str], n: int, category: str,
                 prefix: str, img_dir: Path, style_filter: str | None = None):
     """후보 데이터셋에서 OOD 이미지 n 장 수집. 실패 시 placeholder.
 
-    style_filter 가 주어지면 sample['style'] 에 해당 문자열이 포함된 것만 채택
-    (추상화 필터링용).
+    style_filter 가 주어지면 sample 의 style·genre 필드에 해당 문자열이 포함된
+    것만 채택 (추상화 필터링용 — wikiart 등은 genre 필드로 라벨).
     """
     if n <= 0:
         return []

@@ -55,7 +55,7 @@ tags:
 | `projector.pt` | MultiModalProjector (CLIP 768 → LLM 1536) state_dict |
 | `lora_adapter/` | Qwen2.5-1.5B 전 linear layer LoRA 어댑터 (r=16) |
 
-`<image>` 토큰으로 Qwen2.5 내장 `<|image_pad|>` 를 재사용하므로 adapter 에
+Qwen2.5 내장 `<|image_pad|>` 토큰을 이미지 placeholder 로 재사용하므로 adapter 에
 embedding 군더더기가 없다 (70 MB 전부 LoRA).
 
 ## 사용

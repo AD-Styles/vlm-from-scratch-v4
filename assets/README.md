@@ -11,3 +11,10 @@
 정적 응답 스크린샷은 싣지 않습니다. 위 이미지를 데모에 올리면 누구나 같은 입력을
 재현할 수 있고, 배포 모델의 실제 응답 점검은 `scripts/smoke_space_demo.py`
 (→ `eval_results/v4_space_smoke.json`) 로 기록했습니다.
+
+OOD abstention 배너 관점 — `source_dog.jpg` 는 in-dist 라 배너가 뜨지 않습니다.
+`source_pikachu.png` 는 분포 밖이지만 모델이 "Teddy bear" 라 *자신있게* 틀려
+entropy 가 낮고(OOD score 0.35 < 임계값 0.46) 배너가 뜨지 않습니다 — entropy 검출이
+잡는 건 '불확실한 OOD' 이지 '자신있게 틀린 OOD' 가 아니라는 한계를 보여주는
+예시입니다. 벤치마크 OOD 이미지(`data/v4_ood_benchmark/`) 대부분은 정상적으로
+배너가 뜹니다 (README 'OOD 검출' 참고).

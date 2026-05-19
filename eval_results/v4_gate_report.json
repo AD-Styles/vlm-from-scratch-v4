@@ -9,6 +9,11 @@
   },
   "measured": {
     "vqav2_accuracy": 0.5683333333333334,
+    "vqav2_by_type": {
+      "other": 0.45936981757877277,
+      "yes/no": 0.76,
+      "number": 0.42857142857142855
+    },
     "pope_accuracy": 0.7175,
     "pope_yes_f1": 0.7353629976580797,
     "pope_pred_skew": 0.5675,
@@ -17,6 +22,9 @@
       "yes": 227,
       "no": 173,
       "?": 0
+    },
+    "pope_by_category": {
+      "adversarial": 0.7175
     }
   },
   "n_vqav2": 400,

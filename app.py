@@ -1,7 +1,8 @@
 """Mini-LLaVA v4 — 로컬 Gradio 런처 (raw 모델 sanity-check 용).
 
 배포용 데모는 `space/app.py` (HF Spaces). 이 파일은 학습한 v4 raw 모델을 로컬에서
-바로 띄워 출력을 확인하는 단순 launcher 다 — v4 는 추론 wrapper 가 없다.
+바로 띄워 출력을 확인하는 단순 launcher 다 — v4 는 답변 내용을 바꾸는 추론 wrapper
+가 없고, 학습 분포 밖 입력에 OOD entropy 경고 배너만 얹는다.
 
 사용:
   python app.py \\
@@ -25,7 +26,8 @@ HEADER_MD = """
 # 🖼️ Mini-LLaVA v4 — Vision-Language Demo
 
 **CLIP-ViT-B/32 + MultiModalProjector + Qwen2.5-1.5B-Instruct** 를 처음부터 조립한
-멀티모달 LLM. 이미지를 업로드하고 자연어로 질문해보세요. 한국어 / 영어 모두 가능합니다.
+멀티모달 LLM. 이미지를 올리고 질문해 보세요 — 짧은 영어 사실형 질문(객체·yes/no)에
+가장 안정적이고, 한국어도 되지만 답이 길어지고 환각이 늘어납니다.
 """
 
 FOOTER_MD = """
@@ -34,12 +36,13 @@ FOOTER_MD = """
 > 이 launcher 는 raw 모델 출력 확인용. 배포 데모는 [HF Space](https://huggingface.co/spaces/AD-Styles/mini-llava-v4-demo) 또는 `python space/app.py` 참조.
 """
 
+# 데모 추천 질문 — 검증상 모델이 안정적인 짧은 영어 사실형(객체 식별·yes/no) 위주.
+# 긴 묘사·계수·추론, 한국어 질문은 환각·장황 답변이 잦아 예시에서 뺐다 (README 참고).
 EXAMPLES = [
-    ["이 이미지에 무엇이 보이나요? 자세히 묘사해 주세요."],
-    ["What objects are in this image?"],
-    ["사진 속 분위기는 어떤가요?"],
-    ["Count the number of people in this image."],
-    ["What might happen next in this scene?"],
+    ["What is in this image?"],
+    ["What animal is in this image?"],
+    ["Is there an animal in this picture?"],
+    ["Is the dog wearing a hat?"],
 ]
 
 
@@ -60,23 +63,35 @@ def make_predict_fn(engine: VLMInference):
         image: Image.Image | None,
         question: str,
         max_new_tokens: int,
-        temperature: float,
-        top_p: float,
     ):
         if image is None:
             return "⚠️ 이미지를 먼저 업로드해 주세요.", ""
         if not question or not question.strip():
             return "⚠️ 질문을 입력해 주세요.", ""
 
+        # greedy 디코딩 — 약한 모델에서 sampling 보다 짧은 사실형 답이 안정적이고
+        # 실행마다 동일하다. temperature/top_p 는 쓰지 않는다.
         cfg = GenerationConfig(
             max_new_tokens=int(max_new_tokens),
-            temperature=float(temperature),
-            top_p=float(top_p),
-            do_sample=True,
+            do_sample=False,
         )
         result = engine(image, question.strip(), gen_cfg=cfg)
-        meta = f"⏱️ {result['elapsed']:.2f}s · max_new={cfg.max_new_tokens} · T={cfg.temperature} · top_p={cfg.top_p}"
-        return result["answer"], meta
+        answer, ood = result["answer"], result.get("ood")
+
+        # OOD abstention — 분포 밖 입력이면 답변 위에 저신뢰 경고 배너 (답변은 유지).
+        if ood and ood["is_ood"]:
+            thr = engine.detector.threshold
+            answer = (
+                f"⚠️ 학습 분포 밖(OOD)으로 보이는 입력 — 아래 답변의 신뢰도가 낮습니다 "
+                f"(OOD score {ood['ood_score']:.2f} > 임계값 {thr:.2f}).\n"
+                f"{'─' * 38}\n{answer}"
+            )
+
+        meta = f"⏱️ {result['elapsed']:.2f}s · max_new={cfg.max_new_tokens} · greedy"
+        if ood:
+            tag = "⚠️ OOD" if ood["is_ood"] else "✅ in-dist"
+            meta += f" · {tag} (OOD score {ood['ood_score']:.2f})"
+        return answer, meta
 
     return predict
 
@@ -107,10 +122,6 @@ def build_ui(engine: VLMInference) -> gr.Blocks:
                     max_new_tokens = gr.Slider(
                         16, 512, value=128, step=16, label="max_new_tokens"
                     )
-                    temperature = gr.Slider(
-                        0.1, 1.5, value=0.7, step=0.05, label="temperature"
-                    )
-                    top_p = gr.Slider(0.1, 1.0, value=0.9, step=0.05, label="top_p")
 
                 submit_btn = gr.Button("🚀 응답 생성", variant="primary")
 
@@ -122,12 +133,12 @@ def build_ui(engine: VLMInference) -> gr.Blocks:
 
         submit_btn.click(
             fn=predict,
-            inputs=[image_in, question_in, max_new_tokens, temperature, top_p],
+            inputs=[image_in, question_in, max_new_tokens],
             outputs=[answer_out, meta_out],
         )
         question_in.submit(
             fn=predict,
-            inputs=[image_in, question_in, max_new_tokens, temperature, top_p],
+            inputs=[image_in, question_in, max_new_tokens],
             outputs=[answer_out, meta_out],
         )
 

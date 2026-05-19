@@ -94,27 +94,18 @@ def load_v4_model(projector_path: str, lora_path: str) -> MiniLLaVA:
 
 @torch.no_grad()
 def first_token_logits(model: MiniLLaVA, image: Image.Image, question: str) -> torch.Tensor:
-    """프롬프트까지 forward → 답변 첫 토큰 분포 logits [vocab].
+    """이미지+질문 → 답변 첫 토큰 분포 logits [vocab]. 전처리 후 모델에 위임.
 
-    model.generate 는 output_scores 를 노출하지 않으므로, generate 와 동일한
-    splice 경로(_merge)를 거친 뒤 마지막 위치 logits 를 직접 취한다.
-    add_generation_prompt=True 라 마지막 위치의 next-token = 답변 첫 토큰.
+    splice·forward 본체는 MiniLLaVA.first_token_logits 한 곳에만 둔다 — 데모
+    (src/infer.py)와 이 보정 스크립트가 *문자 그대로 같은 코드* 로 entropy 를
+    계산해야 보정 임계값이 양쪽에서 유효하다.
     """
     device = model.llm.device
     pixel_values = model.image_processor(image, return_tensors="pt")["pixel_values"].to(device)
     input_ids, attn = encode_for_inference(model.tokenizer, question)
     input_ids = input_ids.unsqueeze(0).to(device)
     attn = attn.unsqueeze(0).to(device)
-
-    text_embeds = model.llm.get_input_embeddings()(input_ids)
-    image_embeds = model.encode_image(pixel_values)
-    merged_embeds, merged_mask, _ = model._merge(
-        text_embeds, attn, image_embeds, input_ids, labels=None
-    )
-    out = model.llm(
-        inputs_embeds=merged_embeds, attention_mask=merged_mask, return_dict=True
-    )
-    return out.logits[0, -1, :]
+    return model.first_token_logits(input_ids, attn, pixel_values)
 
 
 # ──────────────────────────────────────────────────────────────────

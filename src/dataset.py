@@ -89,7 +89,7 @@ class VQADataset(Dataset):
         manifest_path: str,
         tokenizer: PreTrainedTokenizerBase,
         image_processor: CLIPImageProcessor,
-        max_length: int = 256,
+        max_length: int = 512,
     ):
         with open(manifest_path, "r", encoding="utf-8") as f:
             self.samples = json.load(f)

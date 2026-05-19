@@ -171,11 +171,13 @@ def main():
         },
         "measured": {
             "vqav2_accuracy": summary["vqav2_accuracy"],
+            "vqav2_by_type": summary["vqav2_by_type"],
             "pope_accuracy": summary["pope_accuracy"],
             "pope_yes_f1": summary["pope_yes_f1"],
             "pope_pred_skew": skew,
             "pope_refusal_rate": refusal,
             "pope_pred_dist": {"yes": yes_ct, "no": no_ct, "?": q_ct},
+            "pope_by_category": summary["pope_by_category"],
         },
         "n_vqav2": args.n_vqav2,
         "n_pope": args.n_pope,

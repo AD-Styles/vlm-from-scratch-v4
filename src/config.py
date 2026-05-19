@@ -36,6 +36,12 @@ SYSTEM_PROMPT = (
     "You receive an image and a question, and answer concisely and accurately."
 )
 
+# OOD 검출용 고정 프롬프트 — 답변 첫 토큰 entropy 신호를 잴 때 쓴다.
+# OOD 임계값(src/ood_detection.py)이 이 프롬프트 기준으로 보정됐으므로, 보정
+# 스크립트(scripts/ood_roc_analysis.py)와 데모(src/infer.py)는 반드시 같은 값을
+# 써야 임계값이 유효하다.
+OOD_PROBE_PROMPT = "What is in this image?"
+
 # v4 — QLoRA 정석 LoRA 대상: attention(q/k/v/o) + MLP(gate/up/down) 전 linear layer.
 # QLoRA 논문 (Dettmers et al., 2023): "LoRA on all linear transformer block layers
 # is required to match full finetuning performance." v3 는 attention(q/k/v/o) 만
@@ -77,9 +83,6 @@ class TrainConfig:
 
     # Vision encoder (v4 는 ViT-B/32 고정)
     vision_model: str = VISION_MODEL
-
-    # tie_word_embeddings 분리 — v3 slim adapter 실험 계승
-    untie_embeddings: bool = False
 
     # bf16 활성화 — 1.5B 에서는 LoRA 학습 안정성 + 메모리 양쪽 모두를 위해 권장
     # v4 default True (v3 는 ViT-L/14 시에만 활성)

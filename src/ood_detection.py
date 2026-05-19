@@ -1,4 +1,4 @@
-"""OOD (Out-of-Distribution) Detection — v3 신규 모듈.
+"""OOD (Out-of-Distribution) Detection — v3 도입, v4 에서 100케이스 ROC 로 재보정.
 
 학습된 MiniLLaVA 가 본 적 없는 도메인의 이미지를 받았을 때, 자신있게 틀리는 대신
 "잘 모르겠다" 라고 응답할 수 있도록 두 가지 신호를 결합:
@@ -86,7 +86,11 @@ class OODResult:
 
     def to_dict(self) -> dict:
         return {
-            "clip_max_sim": round(self.clip_max_sim, 4),
+            "clip_max_sim": (
+                round(self.clip_max_sim, 4)
+                if not math.isnan(self.clip_max_sim)
+                else None
+            ),
             "clip_match": self.clip_match,
             "llm_entropy": (
                 round(self.llm_entropy, 4) if self.llm_entropy is not None else None
@@ -136,24 +140,37 @@ class OODDetector:
         if not self.categories:
             raise ValueError("categories 가 비어 있음 — 최소 1개 필요")
 
-        print(f"[ood] loading CLIP ({clip_model_name}) on {self.device} ...")
-        self.clip = CLIPModel.from_pretrained(clip_model_name).to(self.device)
-        self.clip.eval()
-        self.processor = CLIPProcessor.from_pretrained(clip_model_name)
+        # CLIP 은 weight_clip > 0 일 때만 로드한다. v4 ROC 보정 최적값은
+        # weight_clip=0 (entropy 단독) — 이 경우 CLIP image-text 유사도가 점수에
+        # 0 기여하므로, 무료 CPU Space 에서 별도 CLIPModel(~600MB)을 또 올릴 이유가
+        # 없다. clip_similarity / score 는 미로드 시 이 분기를 따른다.
+        self.clip = None
+        self.processor = None
+        self.text_embeddings = None
+        if self.w_clip > 0:
+            print(f"[ood] loading CLIP ({clip_model_name}) on {self.device} ...")
+            self.clip = CLIPModel.from_pretrained(clip_model_name).to(self.device)
+            self.clip.eval()
+            self.processor = CLIPProcessor.from_pretrained(clip_model_name)
 
-        # 텍스트 임베딩은 한 번만 계산해 캐시 (카테고리는 고정)
-        with torch.no_grad():
-            text_inputs = self.processor(
-                text=self.categories, return_tensors="pt", padding=True
-            ).to(self.device)
-            text_result = self.clip.get_text_features(**text_inputs)
-            # transformers 5.x 호환: BaseModelOutputWithPooling 반환 → .pooler_output
-            # transformers 4.x 호환: Tensor 직접 반환
-            text_emb = text_result.pooler_output if hasattr(text_result, "pooler_output") else text_result
-            text_emb = text_emb / text_emb.norm(dim=-1, keepdim=True)
-        self.text_embeddings = text_emb  # [n_categories, D]
-
-        print(f"[ood] {len(self.categories)} 카테고리 임베딩 캐시 완료")
+            # 텍스트 임베딩은 한 번만 계산해 캐시 (카테고리는 고정)
+            with torch.no_grad():
+                text_inputs = self.processor(
+                    text=self.categories, return_tensors="pt", padding=True
+                ).to(self.device)
+                text_result = self.clip.get_text_features(**text_inputs)
+                # transformers 5.x 호환: BaseModelOutputWithPooling → .pooler_output
+                # transformers 4.x 호환: Tensor 직접 반환
+                text_emb = (
+                    text_result.pooler_output
+                    if hasattr(text_result, "pooler_output")
+                    else text_result
+                )
+                text_emb = text_emb / text_emb.norm(dim=-1, keepdim=True)
+            self.text_embeddings = text_emb  # [n_categories, D]
+            print(f"[ood] {len(self.categories)} 카테고리 임베딩 캐시 완료")
+        else:
+            print("[ood] weight_clip=0 — CLIP 미로드 (entropy 단독 검출)")
 
     # ──────────────────────────────────────────────────────────────────
     # 신호 1: CLIP image-text similarity
@@ -161,6 +178,11 @@ class OODDetector:
     @torch.no_grad()
     def clip_similarity(self, image: Image.Image) -> tuple[float, str]:
         """Image 와 카테고리들 간 max cosine similarity → (score, best_category)."""
+        if self.clip is None:
+            raise RuntimeError(
+                "CLIP 미로드 — clip_similarity 를 쓰려면 weight_clip>0 으로 "
+                "OODDetector 를 생성해야 한다."
+            )
         if image.mode != "RGB":
             image = image.convert("RGB")
 
@@ -206,18 +228,22 @@ class OODDetector:
         """이미지 (+ 선택적 LLM logits) → OODResult.
 
         Args:
-            image: 검사할 PIL 이미지
+            image: 검사할 PIL 이미지 (weight_clip>0 일 때만 사용)
             first_logits: 답변 첫 토큰 logits ([vocab_size]). 없으면 LLM 신호 미사용.
             max_entropy_nats: entropy 정규화 스케일. Qwen2.5 vocab(151,936) 의
                               uniform entropy ≈ ln(151936) ≈ 11.93. 보수적으로 8.0
                               ( "꽤 불확실" 수준) 을 1.0 으로 매핑.
         """
-        clip_sim, clip_match = self.clip_similarity(image)
-
-        # CLIP 신호: 유사도가 낮을수록 OOD ↑
-        # 일반적으로 similarity 가 0.2~0.35 범위이므로 (1 - sim) 그대로면 너무 큼.
+        # CLIP 신호: 유사도가 낮을수록 OOD ↑. weight_clip>0 일 때만 계산한다 —
+        # w_clip=0 (v4 ROC 보정 기본값) 이면 점수 기여가 0 이고 CLIP 도 미로드.
         # 0.15 (꽤 비슷) ~ 0.30 (전혀 안비슷) 을 0~1 로 매핑.
-        clip_signal = max(0.0, min(1.0, (0.30 - clip_sim) / 0.15))
+        if self.w_clip > 0:
+            clip_sim, clip_match = self.clip_similarity(image)
+            clip_signal = max(0.0, min(1.0, (0.30 - clip_sim) / 0.15))
+        else:
+            clip_sim = float("nan")
+            clip_match = "(clip skipped: w_clip=0)"
+            clip_signal = 0.0
 
         if first_logits is not None:
             entropy = self.llm_entropy(first_logits)
@@ -225,7 +251,7 @@ class OODDetector:
             ood_score = self.w_clip * clip_signal + self.w_entropy * entropy_signal
         else:
             entropy = None
-            # LLM 신호 없으면 CLIP 만으로 판단 (가중치 재정규화)
+            # LLM 신호 없으면 CLIP 신호만으로 판단 (w_clip=0 이면 항상 0 → in-dist).
             ood_score = clip_signal
 
         return OODResult(

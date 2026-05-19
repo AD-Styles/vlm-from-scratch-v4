@@ -108,12 +108,6 @@ def parse_args() -> TrainConfig:
         help="CLIP vision encoder. v1/v2/v3/v4: openai/clip-vit-base-patch32 (기본).",
     )
     p.add_argument(
-        "--untie-embeddings",
-        action="store_true",
-        help="v3 bonus: lm_head ↔ embed_tokens 분리. v4 에서는 QLoRA 4-bit base 와의 "
-             "상호작용이 복잡 → 기본 비활성 권장.",
-    )
-    p.add_argument(
         "--bf16",
         action="store_true",
         help="bfloat16 학습 — v4 의 QLoRA 1.5B 학습 시 compute dtype 표준.",
@@ -154,14 +148,12 @@ def main():
     dtype = torch.bfloat16 if cfg.bf16 else torch.float32
     print(
         f"[init] loading MiniLLaVA (vision={cfg.vision_model}, "
-        f"dtype={dtype}, qlora={cfg.use_qlora}, "
-        f"untie_embeddings={cfg.untie_embeddings}) ..."
+        f"dtype={dtype}, qlora={cfg.use_qlora}) ..."
     )
     model = MiniLLaVA(
         vision_model_name=cfg.vision_model,
         freeze_vision=True,
         freeze_llm=not cfg.use_lora,
-        untie_embeddings=cfg.untie_embeddings,
         torch_dtype=dtype,
         use_qlora=cfg.use_qlora,
         qlora_compute_dtype=cfg.qlora_compute_dtype,
@@ -207,6 +199,15 @@ def main():
     warmup_steps = int(total_steps * cfg.warmup_ratio)
     scheduler = LambdaLR(optimizer, cosine_lr_lambda(total_steps, warmup_steps))
 
+    # step별 loss/lr 를 CSV 로 기록 — 학습 곡선의 검증 가능한 근거.
+    # checkpoints/ 는 .gitignore 대상이라 커밋되는 eval_results/ 에 남긴다.
+    run_name = os.path.basename(cfg.output_dir.rstrip("/\\")) or "run"
+    os.makedirs("eval_results", exist_ok=True)
+    log_path = os.path.join("eval_results", f"train_log_{run_name}.csv")
+    log_file = open(log_path, "w", encoding="utf-8")
+    log_file.write("step,loss,lr\n")
+    print(f"[init] step별 loss 로그 → {log_path}")
+
     global_step = 0
     model.train()
     if hasattr(model, "vision"):
@@ -232,9 +233,10 @@ def main():
 
                 if global_step % cfg.log_every == 0:
                     avg = running_loss / (cfg.log_every * cfg.grad_accum_steps)
-                    pbar.set_postfix(
-                        loss=f"{avg:.4f}", lr=f"{scheduler.get_last_lr()[0]:.2e}"
-                    )
+                    lr_now = scheduler.get_last_lr()[0]
+                    pbar.set_postfix(loss=f"{avg:.4f}", lr=f"{lr_now:.2e}")
+                    log_file.write(f"{global_step},{avg:.6f},{lr_now:.3e}\n")
+                    log_file.flush()
                     running_loss = 0.0
 
                 if global_step % cfg.save_every == 0:
@@ -248,6 +250,9 @@ def main():
                         model.llm.save_pretrained(
                             os.path.join(cfg.output_dir, f"lora_step{global_step}")
                         )
+
+    log_file.close()
+    print(f"[done] step별 loss 로그 저장 → {log_path}")
 
     final_path = os.path.join(cfg.output_dir, "projector.pt")
     model.save_projector(final_path)

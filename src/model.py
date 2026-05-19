@@ -53,7 +53,6 @@ class MiniLLaVA(nn.Module):
         freeze_vision: bool = True,
         freeze_llm: bool = True,
         torch_dtype: torch.dtype = torch.float32,
-        untie_embeddings: bool = False,
         use_qlora: bool = False,
         qlora_compute_dtype: str = "bf16",
         qlora_use_double_quant: bool = True,
@@ -121,14 +120,6 @@ class MiniLLaVA(nn.Module):
         if self.tokenizer.pad_token_id is None:
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
 
-        # v3 bonus 실험: tie_word_embeddings 분리
-        # Qwen2.5 는 기본 tie_word_embeddings=True → embed_tokens 와 lm_head 가
-        # 같은 tensor. LoRA 학습 시 lm_head 의 gradient 가 embed_tokens 까지
-        # 미세 영향 → PEFT 가 adapter 저장할 때 embed_tokens 까지 자동 포함 (1GB).
-        # untie 하면 두 가중치가 독립 → adapter 에 embed_tokens 안 들어감 → slim.
-        if untie_embeddings:
-            self._untie_embeddings()
-
         vision_hidden = self.vision.config.hidden_size
         llm_hidden = self.llm.config.hidden_size
         self.projector = MultiModalProjector(vision_hidden, llm_hidden)
@@ -176,30 +167,6 @@ class MiniLLaVA(nn.Module):
         if freeze_llm:
             for p in self.llm.parameters():
                 p.requires_grad = False
-
-    def _untie_embeddings(self) -> None:
-        """lm_head 가중치를 embed_tokens 와 분리 (별도 Parameter 로 clone).
-
-        Qwen2.5 의 tie_word_embeddings=True 상태에서 lm_head.weight 와
-        get_input_embeddings().weight 는 동일한 tensor 객체. clone() 으로
-        독립 Parameter 를 만들고 config 도 False 로 설정.
-        """
-        input_emb = self.llm.get_input_embeddings()
-        lm_head = self.llm.get_output_embeddings()
-        if lm_head is None:
-            raise RuntimeError(
-                "LLM 에 output_embeddings(lm_head) 가 없음 — untie 불가"
-            )
-        # 동일 tensor 인지 확인 (이미 untied 면 skip)
-        if lm_head.weight.data_ptr() == input_emb.weight.data_ptr():
-            lm_head.weight = nn.Parameter(lm_head.weight.detach().clone())
-        # config 동기화 — 이후 save/load 가 untied 로 동작
-        self.llm.config.tie_word_embeddings = False
-        # 검증
-        assert lm_head.weight.data_ptr() != input_emb.weight.data_ptr(), (
-            "untie 실패 — lm_head 와 embed_tokens 가 여전히 같은 tensor"
-        )
-        print("[model] tie_word_embeddings 분리 완료 (lm_head ⊥ embed_tokens)")
 
     # ──────────────────────────────────────────────────────────────────
     # Encoding
@@ -336,6 +303,35 @@ class MiniLLaVA(nn.Module):
         return self.llm.generate(**gen_kwargs)
 
     # ──────────────────────────────────────────────────────────────────
+    # OOD 신호: 답변 첫 토큰 logits (생성 루프 없이 forward 1회)
+    # ──────────────────────────────────────────────────────────────────
+    @torch.no_grad()
+    def first_token_logits(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        pixel_values: torch.Tensor,
+    ) -> torch.Tensor:
+        """프롬프트까지 forward → 답변 첫 토큰 분포 logits [vocab_size].
+
+        generate 는 output_scores 를 노출하지 않으므로, generate 와 동일한 splice
+        경로(_merge)를 거친 뒤 마지막 위치 logits 를 직접 취한다. 입력이
+        encode_for_inference (add_generation_prompt=True) 산출물이면 마지막 위치의
+        next-token = 답변 첫 토큰. OOD entropy 신호(src/ood_detection.py)와 OOD
+        ROC 보정(scripts/ood_roc_analysis.py)이 공유하는 단일 경로 — 보정 임계값이
+        데모에서도 유효하려면 양쪽이 같은 코드로 entropy 를 계산해야 한다.
+        """
+        text_embeds = self.llm.get_input_embeddings()(input_ids)
+        image_embeds = self.encode_image(pixel_values)
+        merged_embeds, merged_mask, _ = self._merge(
+            text_embeds, attention_mask, image_embeds, input_ids, labels=None
+        )
+        out = self.llm(
+            inputs_embeds=merged_embeds, attention_mask=merged_mask, return_dict=True
+        )
+        return out.logits[0, -1, :]
+
+    # ──────────────────────────────────────────────────────────────────
     # Checkpoint I/O — projector만 저장 (LLM/CLIP은 HF에서 다시 로드)
     # ──────────────────────────────────────────────────────────────────
     def save_projector(self, path: str) -> None:
@@ -349,44 +345,10 @@ class MiniLLaVA(nn.Module):
         self.projector.load_state_dict(state)
 
     def load_lora_adapter(self, adapter_path: str) -> None:
-        """학습된 LoRA adapter를 frozen LLM 위에 부착.
-
-        v3 slim adapter 지원: adapter 디렉터리에 image_token_row.safetensors 가
-        있으면 PEFT 로 LoRA 만 로드 후 마지막 row (`<image>` 토큰의 학습된
-        representation) 를 수동 패치. 1GB → 8MB 절감 (품질 손실 0).
-        """
-        from pathlib import Path
-
+        """학습된 LoRA adapter를 frozen LLM 위에 부착."""
         from peft import PeftModel
 
         self.llm = PeftModel.from_pretrained(self.llm, adapter_path)
-
-        # slim adapter 지원: image token row 가 별도 파일로 저장된 경우 패치
-        image_row_path = Path(adapter_path) / "image_token_row.safetensors"
-        if image_row_path.exists():
-            from safetensors import safe_open
-
-            with safe_open(str(image_row_path), framework="pt") as f:
-                for key in f.keys():
-                    row = f.get_tensor(key)
-                    # 키 형식: "image_token.embed_tokens" or "image_token.lm_head"
-                    module_name = key.rsplit(".", 1)[-1]
-                    if module_name == "embed_tokens":
-                        target = self.llm.get_input_embeddings()
-                    elif module_name == "lm_head":
-                        target = self.llm.get_output_embeddings()
-                    else:
-                        print(f"[slim] 알 수 없는 image_token 키: {key} — skip")
-                        continue
-                    if target is None:
-                        continue
-                    # dtype/device 일치시켜 마지막 row (= <image> 토큰) 패치
-                    with torch.no_grad():
-                        target.weight[-1] = row.to(
-                            dtype=target.weight.dtype, device=target.weight.device
-                        )
-                    print(f"[slim] {module_name}.weight[-1] 패치 완료 ({key})")
-
         self.llm.eval()
 
     def trainable_parameters(self):

@@ -20,6 +20,10 @@ CLIP-ViT-B/32 + 2-layer MLP Projector + Qwen2.5-1.5B-Instruct 를 직접 이어 
 1.5B 규모와 약 9만 학습 샘플의 한계입니다. 정량 평가는 raw 모델 기준 VQAv2 56.8% /
 POPE 71.8% (n=400).
 
+학습 분포 밖(만화·추상화 등) 입력은 첫 토큰 entropy 로 감지해 답변 위에 ⚠️ 저신뢰
+경고를 띄웁니다 (OOD entropy AUC 0.971 로 보정). 경고는 답변 내용을 바꾸지 않고
+신뢰도만 표시합니다.
+
 ## 실행 메모
 
 무료 **CPU** 티어에서 동작합니다. 학습은 QLoRA 4-bit (CUDA) 였으나, CPU 추론에서는

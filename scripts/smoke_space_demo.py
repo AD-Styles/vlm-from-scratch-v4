@@ -45,8 +45,10 @@ def main():
     for i, (img, q, intent) in enumerate(TESTS):
         t0 = time.time()
         try:
+            # 데모 predict 입력: (image, question, max_new_tokens) — greedy 디코딩
+            # 전환으로 temperature/top_p 슬라이더는 제거됨.
             ans, _meta = c.predict(
-                handle_file(img), q, 48, 0.7, 0.9, api_name="/predict"
+                handle_file(img), q, 48, api_name="/predict"
             )
         except Exception as e:  # noqa: BLE001
             ans = f"ERROR: {type(e).__name__}: {e}"

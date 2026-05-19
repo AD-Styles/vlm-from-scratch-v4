@@ -8,9 +8,10 @@ from typing import Optional
 import torch
 from PIL import Image
 
-from .config import VISION_MODEL, GenerationConfig
+from .config import OOD_PROBE_PROMPT, VISION_MODEL, GenerationConfig
 from .dataset import encode_for_inference
 from .model import MiniLLaVA
+from .ood_detection import OODDetector
 
 
 class VLMInference:
@@ -23,6 +24,7 @@ class VLMInference:
         vision_model: str = VISION_MODEL,
         device: Optional[str] = None,
         torch_dtype: torch.dtype = torch.float32,
+        enable_ood: bool = True,
     ):
         self.device = torch.device(
             device or ("cuda" if torch.cuda.is_available() else "cpu")
@@ -52,6 +54,11 @@ class VLMInference:
 
         self.model.to(self.device)
         self.model.eval()
+
+        # OOD abstention — 학습 분포 밖 입력에 저신뢰 경고를 띄우기 위한 검출기.
+        # v4 ROC 보정 기본값(weight_clip=0, threshold=0.4582) — entropy 단독이라
+        # CLIP 은 로드하지 않는다(CPU Space 메모리 절약).
+        self.detector = OODDetector(device=str(self.device)) if enable_ood else None
 
     @torch.no_grad()
     def __call__(
@@ -85,7 +92,22 @@ class VLMInference:
             top_p=gen_cfg.top_p,
             do_sample=gen_cfg.do_sample,
         )
+        text = self.model.tokenizer.decode(out[0], skip_special_tokens=True).strip()
+
+        # OOD 점검 — 고정 프롬프트(OOD_PROBE_PROMPT)로 답변 첫 토큰 entropy 를
+        # 잰다. OOD 임계값이 그 프롬프트로 보정됐으므로 사용자 질문이 아닌
+        # canonical 프롬프트를 쓴다 (OOD 는 질문이 아니라 이미지의 속성).
+        ood = None
+        if self.detector is not None:
+            ood_ids, ood_attn = encode_for_inference(
+                self.model.tokenizer, OOD_PROBE_PROMPT
+            )
+            ood_ids = ood_ids.unsqueeze(0).to(self.device)
+            ood_attn = ood_attn.unsqueeze(0).to(self.device)
+            first_logits = self.model.first_token_logits(
+                ood_ids, ood_attn, pixel_values
+            )
+            ood = self.detector.score(image, first_logits=first_logits).to_dict()
         elapsed = time.time() - t0
 
-        text = self.model.tokenizer.decode(out[0], skip_special_tokens=True).strip()
-        return {"answer": text, "elapsed": elapsed}
+        return {"answer": text, "elapsed": elapsed, "ood": ood}

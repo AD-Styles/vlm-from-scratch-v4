@@ -1,9 +1,12 @@
 """Mini-LLaVA v4 — Hugging Face Spaces 데모.
 
-v4 **raw 모델** (CLIP-ViT-B/32 + MultiModalProjector + Qwen2.5-1.5B + LoRA) 을
-그대로 서빙한다. v3 와 달리 추론 wrapper (CLIP grounding / 번역 / OOD router) 가
-없다 — raw 모델이 배포 게이트 (`scripts/eval_gate.py`) 5/5 를 통과했기 때문이다.
-"v3 의 wrapper 가 raw 의 약함을 가렸다" 는 회고를 반복하지 않으려는 의도적 선택.
+v4 raw 모델 (CLIP-ViT-B/32 + MultiModalProjector + Qwen2.5-1.5B + LoRA) 을 서빙한다.
+답변 *내용* 을 바꾸는 성능(capability) wrapper — v3 의 CLIP grounding / OOD router —
+는 없다. 그것이 raw 의 약함을 벤치마크 점수에서 가렸다는 회고 때문이고, raw 모델은
+배포 게이트(`scripts/eval_gate.py`) 5/5 를 자력으로 통과했다. 대신 답변을 바꾸지
+않는 abstention 레이어만 얹는다: 첫 토큰 entropy 로 학습 분포 밖 입력을 감지해
+저신뢰 경고 배너를 띄운다 (src/ood_detection.py, OOD entropy AUC 0.971 로 보정).
+성능 wrapper(거부) ≠ abstention 레이어(채택) — 후자는 게이트 raw 측정을 건드리지 않는다.
 
 ⚙️ 실행 환경 메모
   - 학습은 QLoRA 4-bit (CUDA) 였으나 HF Spaces 무료 티어는 CPU.
@@ -35,7 +38,9 @@ HEADER_MD = """
 # 🖼️ Mini-LLaVA v4 — Vision-Language Demo
 
 **CLIP-ViT-B/32 + MultiModalProjector + Qwen2.5-1.5B-Instruct (QLoRA)** 를 처음부터
-조립한 멀티모달 LLM. 이미지를 업로드하고 한국어 / 영어로 질문해 보세요.
+조립한 멀티모달 LLM. 짧은 영어 사실형 질문(객체·yes/no)에 가장 안정적이고, 한국어도
+되지만 답이 길어지고 환각이 늘어납니다. 학습 분포 밖(만화·추상화 등) 입력에는 답변
+위에 ⚠️ 저신뢰 경고가 표시됩니다.
 
 > ⏳ **무료 CPU Space 입니다.** 1.5B 모델을 GPU 없이 돌리는 비용으로 — 짧은 답변은
 > 20~40초, 긴 묘사형 답변은 수 분까지 걸립니다. 정성 확인용 데모입니다.
@@ -44,17 +49,18 @@ HEADER_MD = """
 
 FOOTER_MD = """
 ---
-> 🛠️ `vlm-from-scratch-v4` — raw 모델 그대로 서빙 (추론 wrapper 없음).
-> v4 는 raw 모델이 VQAv2 + POPE 배포 게이트를 넘었기에
-> v3 식 wrapper 를 의도적으로 생략했습니다.
+> 🛠️ `vlm-from-scratch-v4` — raw 모델 서빙 + entropy 기반 OOD abstention 배너.
+> 답변 내용을 바꾸는 성능 wrapper 는 없습니다 (v3 의 실수). 단, 학습 분포 밖
+> 입력에는 첫 토큰 entropy(AUC 0.971 로 보정)로 저신뢰 경고를 띄웁니다.
 """
 
+# 데모 추천 질문 — 검증상 모델이 안정적인 짧은 영어 사실형(객체 식별·yes/no) 위주.
+# 긴 묘사·계수·추론, 한국어 질문은 환각·장황 답변이 잦아 예시에서 뺐다 (README 참고).
 EXAMPLES = [
-    ["이 이미지에 무엇이 보이나요? 자세히 묘사해 주세요."],
-    ["What objects are in this image?"],
-    ["사진 속 분위기는 어떤가요?"],
-    ["How many people are in this image?"],
-    ["What is the main color in this picture?"],
+    ["What is in this image?"],
+    ["What animal is in this image?"],
+    ["Is there an animal in this picture?"],
+    ["Is the dog wearing a hat?"],
 ]
 
 
@@ -91,8 +97,6 @@ def predict(
     image: Image.Image | None,
     question: str,
     max_new_tokens: int,
-    temperature: float,
-    top_p: float,
 ):
     if ENGINE is None:
         return (
@@ -105,18 +109,30 @@ def predict(
     if not question or not question.strip():
         return "⚠️ 질문을 입력해 주세요.", ""
 
+    # greedy 디코딩 — 약한 모델에서 sampling 보다 짧은 사실형 답이 안정적이고
+    # 실행마다 동일하다. temperature/top_p 는 쓰지 않는다.
     cfg = GenerationConfig(
         max_new_tokens=int(max_new_tokens),
-        temperature=float(temperature),
-        top_p=float(top_p),
-        do_sample=True,
+        do_sample=False,
     )
     result = ENGINE(image, question.strip(), gen_cfg=cfg)
-    meta = (
-        f"⏱️ {result['elapsed']:.1f}s · max_new={cfg.max_new_tokens} · "
-        f"T={cfg.temperature} · top_p={cfg.top_p}"
-    )
-    return result["answer"], meta
+    answer, ood = result["answer"], result.get("ood")
+
+    # OOD abstention — 학습 분포 밖 입력이면 답변 위에 저신뢰 경고 배너.
+    # 답변 자체는 그대로 노출한다 (검출기 동작을 보여주는 투명한 데모).
+    if ood and ood["is_ood"]:
+        thr = ENGINE.detector.threshold
+        answer = (
+            f"⚠️ 학습 분포 밖(OOD)으로 보이는 입력입니다 — 아래 답변의 신뢰도가 "
+            f"낮습니다 (OOD score {ood['ood_score']:.2f} > 임계값 {thr:.2f}).\n"
+            f"{'─' * 38}\n{answer}"
+        )
+
+    meta = f"⏱️ {result['elapsed']:.1f}s · max_new={cfg.max_new_tokens} · greedy"
+    if ood:
+        tag = "⚠️ OOD" if ood["is_ood"] else "✅ in-dist"
+        meta += f" · {tag} (OOD score {ood['ood_score']:.2f})"
+    return answer, meta
 
 
 def build_ui() -> gr.Blocks:
@@ -148,17 +164,13 @@ def build_ui() -> gr.Blocks:
                         16, 160, value=48, step=16,
                         label="max_new_tokens (CPU — 클수록 느림)",
                     )
-                    temperature = gr.Slider(
-                        0.1, 1.5, value=0.7, step=0.05, label="temperature"
-                    )
-                    top_p = gr.Slider(0.1, 1.0, value=0.9, step=0.05, label="top_p")
                 submit_btn = gr.Button("🚀 응답 생성", variant="primary")
 
             with gr.Column(scale=1):
                 answer_out = gr.Textbox(label="🤖 모델 응답", lines=12, interactive=False)
                 meta_out = gr.Markdown("")
 
-        inputs = [image_in, question_in, max_new_tokens, temperature, top_p]
+        inputs = [image_in, question_in, max_new_tokens]
         submit_btn.click(fn=predict, inputs=inputs, outputs=[answer_out, meta_out])
         question_in.submit(fn=predict, inputs=inputs, outputs=[answer_out, meta_out])
 

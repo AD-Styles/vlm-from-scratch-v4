@@ -42,6 +42,8 @@ LLaVA-1.5 의 2단계 학습을 따랐습니다 — 먼저 projector 만 정렬�
 - Stage 2 믹스는 VQAv2 18K(짧은 사실) + LocalizedNarratives 10K(긴 묘사) + A-OKVQA 6K(추론) + KoLLaVA 12K(한국어). 한 능력에 치우치지 않도록 의도적으로 섞었습니다.
 - 학습 루프 `src/train.py` — cosine LR + warmup, grad clipping, 중간 체크포인트 저장.
 
+---
+
 ## 📊 결과 (Results).
 
 ### 정량 평가 — VQAv2 · POPE
@@ -79,6 +81,8 @@ v3 는 POPE 에서 전부 "yes" 만 답해 사실상 랜덤(50%)이었고, v4 �
 
 CPU 추론이라 케이스당 10~66초가 걸리고, 샘플링 디코딩이라 실행마다 답이 조금씩 달라집니다. 정리하면 — 장면·yes/no·단순 객체 같은 짧은 사실형은 안정적이고, 세밀한 구분과 장문 묘사는 약하며(형식은 유창하나 없는 디테일을 지어냄), 분포 밖 입력은 거르지 않고 자신있게 답합니다.
 
+---
+
 ## 🔍 OOD 검출 (OOD Detection)
 
 분포 밖 입력(만화·추상화)에 모델이 자신있게 틀리는 문제를 별도로 분석했습니다. CLIP image-text 유사도와 LLM 첫 토큰 entropy 두 신호를 100케이스(in-dist 40 + 만화 30 + 추상화 30)로 ROC 비교했습니다 (`scripts/ood_roc_analysis.py`).
@@ -86,6 +90,8 @@ CPU 추론이라 케이스당 10~66초가 걸리고, 샘플링 디코딩이라 �
 ![OOD 검출 — entropy/CLIP 가중치 스윕에 따른 ROC AUC](assets/ood_roc_sweep.png)
 
 entropy 단독(w_clip=0)이 AUC **0.971** 로 가장 강했고, CLIP 신호를 섞을수록 단조 감소했습니다(CLIP 단독 0.66). 5-fold 교차검증 0.969 로 과적합이 아님을 확인했고, 최적 임계값에서 판정 정확도는 91% 입니다. 단 이 검출기는 오프라인 분석용입니다 — 배포된 데모에는 적용하지 않았고, 데모는 raw 모델만 서빙하므로 위 추상화 사례처럼 OOD 입력에 그대로 답합니다.
+
+---
 
 ## 💡 회고록 (Retrospective)
 

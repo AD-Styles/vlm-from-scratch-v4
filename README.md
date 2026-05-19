@@ -167,31 +167,13 @@ v3 는 POPE 에서 전부 "yes" 만 답해 사실상 랜덤(50%)이었지만, v4
 
 ## 🔍 OOD 검출 (OOD Detection)
 
-분포 밖 입력(만화·추상화)에 모델이 자신있게 틀리는 문제를 정량 분석하고, 그 결과를 데모에 abstention 레이어로 연동했습니다.
-
-### ▸ 두 신호를 100케이스로 ROC 비교
-
-CLIP image-text 유사도와 LLM 첫 토큰 entropy 두 신호를 100케이스(in-dist 40 + 만화 30 + 추상화 30)로 비교했습니다 (`scripts/ood_roc_analysis.py` → [`eval_results/v4_ood_roc.json`](eval_results/v4_ood_roc.json)).
+v3 회고록의 숙제 하나 — 학습 분포 밖(만화·추상화) 입력에 모델이 자신있게 틀리는 문제 — 를 v4 에서 닫았습니다. LLM 첫 토큰 entropy 를 OOD 신호로 쓰고, 100케이스(in-dist 40 + 만화 30 + 추상화 30)로 ROC 보정했습니다 (`scripts/ood_roc_analysis.py` → [`eval_results/v4_ood_roc.json`](eval_results/v4_ood_roc.json)).
 
 ![OOD 검출 — entropy/CLIP 가중치 스윕에 따른 ROC AUC](assets/ood_roc_sweep.png)
 
-| 신호 | ROC AUC |
-|---|---|
-| **entropy 단독** (w_clip = 0) | **0.971** |
-| 가중 합 (w_clip = 0.6) | 0.884 |
-| CLIP 단독 (w_clip = 1.0) | 0.660 |
+entropy 단독이 AUC **0.971** 로 가장 강했고(CLIP image-text 유사도를 섞을수록 오히려 단조 감소), 5-fold 교차검증 평균 **0.969** 로 과적합이 아님을 확인했습니다. 이 검출기를 데모에 **abstention 레이어** 로 연결해(`src/ood_detection.py` → `src/infer.py` → `space/app.py`), OOD score 가 임계값을 넘으면 답변 위에 ⚠️ 저신뢰 경고를 띄웁니다 — 답변 *내용* 은 그대로 두고 신뢰도만 표시합니다.
 
-entropy 단독이 가장 강했고, CLIP 신호를 섞을수록 단조 감소했습니다. **5-fold 교차검증 평균 0.969** (fold당 test 20개, fold별 0.95~0.99)로 과적합이 아님을 확인했습니다. 최적 가중치에서 Youden's J 임계값은 **0.4582**, 그 100케이스 위 판정 정확도 91% (TPR 0.90 / FPR 0.075) — 임계값을 같은 셋에서 골랐으므로 정확도는 in-sample 참고치이고, 교차검증한 지표는 AUC 입니다. 카테고리별 AUC 는 만화 0.965 · 추상화 0.978.
-
-### ▸ 데모 연동 — abstention 배너
-
-이 검출기를 v4 데모에 연결했습니다 (`src/ood_detection.py` → `src/infer.py` → `space/app.py`). 데모는 답변마다 고정 프롬프트로 첫 토큰 entropy 를 한 번 더 재고, OOD score 가 0.4582 임계값을 넘으면 답변 위에 ⚠️ 저신뢰 경고를 띄웁니다 — **답변 내용은 그대로 두고 신뢰도만 표시** 합니다. 위 스모크 점검의 만화(0.56)·추상화(0.61) 두 건에서 배너가 정상적으로 떴습니다.
-
-### ▸ 한계 — entropy 는 *불확실성* 신호다
-
-entropy 검출은 모델이 분포 밖 입력을 *자신있게* 틀리면 놓칩니다. 번들 샘플 `assets/source_pikachu.png` 가 그 예입니다 — 모델이 "Teddy bear" 라 확신해 entropy 가 낮고(score 0.35 < 0.4582) 배너가 뜨지 않습니다. 검출 대상은 *불확실한 OOD* 이지 *자신있게 틀린 OOD* 가 아니라는 구조적 한계입니다. 반대 방향으로는, 경계값 in-dist 입력이 임계값을 살짝 넘어 오탐이 날 수 있습니다(보정 FPR 7.5%).
-
-> 보정은 4-bit 학습 모델, 무료 CPU 데모는 fp32 라 entropy 가 미세하게 다를 수 있어 `scripts/diag_deploy_gap.py` 로 그 차이를 정량화했습니다 (아래 회고).
+다만 entropy 는 *불확실성* 신호라, 모델이 분포 밖 입력을 *자신있게* 틀리면 놓칩니다 — 번들 `source_pikachu.png` 는 "Teddy bear" 라 확신해 배너가 뜨지 않습니다. 검출 대상은 *불확실한 OOD* 이지 *자신있게 틀린 OOD* 가 아니라는 구조적 한계입니다.
 
 ---
 
@@ -232,7 +214,7 @@ v1·v2 에서 CLIP·projector·LLM 을 잇는 기본 구조를 만들었고, v3 
 
 v4 는 목표한 것을 해냈지만 성능 자체는 제한적입니다. VQAv2 56.8% / POPE 71.8% 는 공개 소형 VLM 에 못 미치고, 1.5B·8GB·약 9만 샘플이라는 천장은 분명합니다 — 다만 이 시리즈의 목표는 SOTA 가 아니라 *제약 안에서 끝까지 검증된 구현* 이었습니다. v3 가 *분석* 으로만 끝낸 OOD 숙제는 이번엔 데모의 abstention 레이어로 닫았습니다. 이건 v3 가 거부했던 "성능 wrapper" 와 다릅니다 — v3 wrapper 는 답변을 바꿔 벤치마크 점수를 부풀렸지만(그래서 거부), abstention 레이어는 답변을 바꾸지 않고 신뢰도만 표시하므로 게이트의 raw 측정을 건드리지 않습니다.
 
-학습(4-bit)과 무료 CPU 데모(fp32) 사이의 정밀도 절충은 `scripts/diag_deploy_gap.py` 로 정량화했습니다 — 7개 진단 케이스에서 답변은 **7/7 동일**, OOD-probe entropy 차이도 평균 **0.17 nats** 로 작아 OOD 판정이 두 config 에서 모두 일치했습니다 ([`eval_results/v4_deploy_gap.json`](eval_results/v4_deploy_gap.json)). 4-bit 로 보정한 OOD 임계값을 fp32 데모에 그대로 써도 무방하다는 근거입니다.
+학습은 4-bit QLoRA, 무료 CPU 데모는 fp32 라 정밀도 차이가 있지만, 진단 케이스에서 두 config 의 답변이 모두 일치해 배포 환경이 결과를 왜곡하지 않는 것을 확인했습니다 (`scripts/diag_deploy_gap.py`).
 
 한국어는 학습 데이터를 4K(v3) → 12K 로 늘려 출력 언어는 안정적으로 복원했지만, 신뢰할 표준 한국어 VQA 벤치마크가 없어 정량 평가셋은 만들지 못했습니다 — 짧은 영어 사실형이 가장 안정적이고 한국어 장문은 환각이 잦다는 것이 정성 점검의 결론입니다. 네 번의 반복으로 from-scratch VLM 의 구조·학습·평가·배포를 한 번씩 직접 통과한 것이 이 시리즈가 남긴 것입니다.
 

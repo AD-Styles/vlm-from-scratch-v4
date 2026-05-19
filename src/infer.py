@@ -35,6 +35,7 @@ class VLMInference:
             freeze_vision=True,
             freeze_llm=True,
             torch_dtype=torch_dtype,
+            gradient_checkpointing=False,  # 추론 — checkpointing 불필요 (eval 스크립트와 일관)
         )
 
         if checkpoint_path and os.path.exists(checkpoint_path):

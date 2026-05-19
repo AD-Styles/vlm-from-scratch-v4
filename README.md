@@ -25,6 +25,8 @@ VLM 의 핵심인 이미지-텍스트 융합을 고수준 라이브러리에 맡
 - **`<image>` 토큰 재사용** — 새 토큰을 추가하는 대신 Qwen2.5 에 내장된 `<|image_pad|>` 를 그대로 썼습니다. `resize_token_embeddings` 를 호출하지 않으므로, v3 에서 겪었던 "embedding resize → PEFT 가 `embed_tokens` 를 통째로 저장 → adapter 1GB" 문제가 생기지 않습니다. splice 는 토큰의 *위치*만 쓰므로 임베딩 품질과 무관합니다.
 - **instruction-only label masking (`src/dataset.py`)** — system·user 토큰은 `IGNORE_INDEX` 로 가리고 assistant 응답 토큰에만 loss 를 줍니다.
 
+---
+
 ## 🧪 학습 (Training)
 
 LLaVA-1.5 의 2단계 학습을 따랐습니다 — 먼저 projector 만 정렬하고, 그 위에서 LoRA instruction tuning.
